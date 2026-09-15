@@ -1,7 +1,12 @@
 from datetime import UTC, datetime, timedelta
 
 from project_risk_agent.models import ProjectSignal
-from project_risk_agent.temporal import age_days, extract_date_move, has_repeated_change, signal_sequence
+from project_risk_agent.temporal import (
+    age_days,
+    extract_date_move,
+    has_repeated_change,
+    signal_sequence,
+)
 
 
 def signal(content: str, signal_id: str, days_ago: int = 0) -> ProjectSignal:
