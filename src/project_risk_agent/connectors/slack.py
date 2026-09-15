@@ -7,12 +7,14 @@ from typing import Any
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from project_risk_agent.connectors.base import ProjectConnector
 from project_risk_agent.models import ProjectSignal
 
 
-class SlackConnector:
+class SlackConnector(ProjectConnector):
     """Read-only Slack Conversations API connector."""
 
+    name = "slack"
     API_URL = "https://slack.com/api"
 
     def __init__(self, token: str | None = None, timeout: float = 20.0) -> None:
