@@ -24,8 +24,10 @@ def run_case(case: dict) -> dict:
     actual_types = {finding.type.value for finding in findings}
     actual_categories = {finding.category.value for finding in findings}
     evidence_grounded = all(finding.evidence for finding in findings)
-    type_ok = set(expected.get("finding_types", [])) <= actual_types
-    category_ok = set(expected.get("categories", [])) <= actual_categories
+    expected_types = set(expected.get("finding_types", []))
+    expected_categories = set(expected.get("categories", []))
+    type_ok = expected_types <= actual_types if expected_types else not actual_types
+    category_ok = expected_categories <= actual_categories
     evidence_ok = not expected.get("requires_evidence", False) or evidence_grounded
     return {
         "id": case["id"],
