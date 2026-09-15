@@ -64,7 +64,9 @@ class SignalReasoner:
                 )
             )
 
-        return self._infer_cross_signal_schedule_risk(signals, self._corroborate(findings))
+        findings = self._corroborate(findings)
+        findings = self._infer_contradictions(signals, findings)
+        return self._infer_cross_signal_schedule_risk(signals, findings)
 
     @staticmethod
     def _category(categories: list[RiskCategory], finding_type: FindingType) -> RiskCategory:
@@ -86,6 +88,45 @@ class SignalReasoner:
                 primary.description = f"Corroborated by {len(group)} project signals. " + primary.description
             output.append(primary)
         return output
+
+    @staticmethod
+    def _infer_contradictions(signals: list[ProjectSignal], findings: list[Finding]) -> list[Finding]:
+        """Surface materially conflicting status language as a human-reviewable risk."""
+        ordered = signal_sequence(signals)
+        positive = re.compile(r"\b(on track|on schedule|on time|still on track|no delay)\b", re.I)
+        negative = re.compile(r"\b(delayed?|slipp(?:ed|ing)|behind schedule|date changed|moved from .+ to .+)\b", re.I)
+        positive_signals = [s for s in ordered if positive.search(s.content)]
+        negative_signals = [s for s in ordered if negative.search(s.content)]
+        if not positive_signals or not negative_signals:
+            return findings
+        evidence = evidence_for_signals(
+            ordered,
+            lambda signal: bool(positive.search(signal.content) or negative.search(signal.content)),
+            "Conflicting schedule-status language requires human verification.",
+        )
+        existing = next((f for f in findings if f.type == FindingType.RISK and f.category == RiskCategory.SCHEDULE), None)
+        if existing:
+            existing.evidence = evidence
+            existing.confidence = min(0.95, max(existing.confidence, 0.84))
+            existing.description = "Project signals contain conflicting schedule-status statements."
+            existing.recommended_actions = ["Reconcile the conflicting status updates with the project owner and confirm the current schedule baseline."]
+            return findings
+        findings.append(
+            Finding(
+                id=_finding_id(ordered, FindingType.RISK, RiskCategory.SCHEDULE),
+                type=FindingType.RISK,
+                category=RiskCategory.SCHEDULE,
+                title="Conflicting schedule status",
+                description="Project signals contain conflicting schedule-status statements.",
+                likelihood="medium",
+                impact="medium",
+                urgency="medium",
+                confidence=0.84,
+                evidence=evidence,
+                recommended_actions=["Reconcile the conflicting status updates with the project owner and confirm the current schedule baseline."],
+            )
+        )
+        return findings
 
     def _infer_cross_signal_schedule_risk(self, signals: list[ProjectSignal], findings: list[Finding]) -> list[Finding]:
         ordered = signal_sequence(signals)
@@ -133,7 +174,7 @@ class SignalReasoner:
     @staticmethod
     def _finding_type(text: str) -> FindingType:
         lowered = text.lower()
-        if re.search(r"\b(decision|approve|approval|choose|needs sign[- ]off)\b", lowered):
+        if re.search(r"\b(decision|decide|approval|approve|choose|needs sign[- ]off)\b", lowered):
             return FindingType.DECISION
         if re.search(r"\b(risk|at risk|may miss|might miss|could miss|potential)\b", lowered):
             return FindingType.RISK
