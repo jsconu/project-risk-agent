@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from hashlib import sha256
-import re
 
 from project_risk_agent.evidence import evidence_for_signals
 from project_risk_agent.models import Evidence, Finding, FindingType, ProjectSignal, RiskCategory
@@ -58,13 +58,7 @@ class SignalReasoner:
                     impact=self._impact(text),
                     urgency=self._urgency(text),
                     confidence=0.68,
-                    evidence=[
-                        Evidence(
-                            signal_id=signal.id,
-                            excerpt=text[:500],
-                            rationale="Signal contains language associated with a management concern.",
-                        )
-                    ],
+                    evidence=[Evidence(signal_id=signal.id, excerpt=text[:500], rationale="Signal contains language associated with a management concern.")],
                     decision_required=finding_type == FindingType.DECISION,
                     recommended_actions=self._actions(finding_type, category),
                 )
@@ -125,11 +119,7 @@ class SignalReasoner:
                 type=FindingType.RISK,
                 category=RiskCategory.SCHEDULE,
                 title="Potential schedule concern",
-                description=(
-                    "Repeated schedule or status changes are creating schedule exposure."
-                    if repeated_change and not has_downstream_dependency
-                    else "Schedule movement is coupled to a downstream dependency."
-                ),
+                description=("Repeated schedule or status changes are creating schedule exposure." if repeated_change and not has_downstream_dependency else "Schedule movement is coupled to a downstream dependency."),
                 likelihood="high" if has_downstream_dependency else "medium",
                 impact="medium",
                 urgency="medium",
