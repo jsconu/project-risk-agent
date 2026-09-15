@@ -15,12 +15,13 @@ def main() -> None:
     parser.add_argument("path", type=Path, help="Text or JSON file containing project signals")
     args = parser.parse_args()
 
-    signals = FileConnector().get_signals(str(args.path))
+    signals = FileConnector().load(args.path)
     result = RiskAnalysisService(DeterministicProvider(RiskAnalyzer())).analyze(signals)
-    print(json.dumps(result.model_dump() if hasattr(result, "model_dump") else {
+    payload = {
         "signals_analyzed": result.signals_analyzed,
         "findings": [finding.model_dump(mode="json") for finding in result.findings],
-    }, indent=2, default=str))
+    }
+    print(json.dumps(payload, indent=2, default=str))
 
 
 if __name__ == "__main__":
