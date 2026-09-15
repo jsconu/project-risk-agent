@@ -35,12 +35,23 @@ class FindingDelta:
 
 
 def _changed_fields(previous: Finding, current: Finding) -> tuple[str, ...]:
-    fields = ("title", "description", "likelihood", "impact", "urgency", "confidence", "owner", "decision_required", "decision_owner", "recommended_actions")
+    fields = (
+        "title",
+        "description",
+        "likelihood",
+        "impact",
+        "urgency",
+        "confidence",
+        "owner",
+        "decision_required",
+        "decision_owner",
+        "recommended_actions",
+    )
     return tuple(field for field in fields if getattr(previous, field) != getattr(current, field))
 
 
 def compare_findings(previous: list[Finding], current: list[Finding]) -> FindingDelta:
-    """Compare findings using their stable IDs and detect material changes."""
+    """Compare findings using stable IDs and detect material changes."""
     previous_by_id = {finding.id: finding for finding in previous}
     current_by_id = {finding.id: finding for finding in current}
 
