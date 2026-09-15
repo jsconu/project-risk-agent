@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from project_risk_agent.models import Finding
 
 
@@ -7,11 +6,7 @@ _LEVEL = {"low": 1, "medium": 2, "high": 3}
 
 
 def attention_score(finding: Finding) -> float:
-    """Return a transparent 0-100 management-attention score.
-
-    This is a prioritization aid, not a business decision. It combines the
-    three human-readable severity dimensions with model confidence.
-    """
+    """Return a transparent 0-100 management-attention score."""
     likelihood = _LEVEL.get((finding.likelihood or "medium").lower(), 2)
     impact = _LEVEL.get((finding.impact or "medium").lower(), 2)
     urgency = _LEVEL.get((finding.urgency or "medium").lower(), 2)
