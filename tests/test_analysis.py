@@ -1,0 +1,42 @@
+from datetime import UTC, datetime
+
+from project_risk_agent.analysis import SignalReasoner
+from project_risk_agent.models import FindingType, ProjectSignal, RiskCategory
+
+
+def signal(content: str, signal_id: str) -> ProjectSignal:
+    return ProjectSignal(
+        id=signal_id,
+        source="test",
+        source_type="text",
+        timestamp=datetime.now(UTC),
+        content=content,
+    )
+
+
+def test_dependency_is_classified_separately_from_schedule():
+    findings = SignalReasoner().analyze(
+        [signal("UAT is waiting for the API delivery.", "s1")]
+    )
+    assert findings[0].type == FindingType.DEPENDENCY
+    assert findings[0].category == RiskCategory.DEPENDENCY
+
+
+def test_multiple_signals_are_corroborated_with_all_evidence():
+    findings = SignalReasoner().analyze(
+        [
+            signal("The release is delayed by two days.", "s1"),
+            signal("The release is still delayed after today's checkpoint.", "s2"),
+        ]
+    )
+    assert len(findings) == 1
+    assert {e.signal_id for e in findings[0].evidence} == {"s1", "s2"}
+    assert findings[0].confidence > 0.68
+
+
+def test_decision_language_creates_decision_finding():
+    findings = SignalReasoner().analyze(
+        [signal("Leadership approval is needed to choose the revised launch date.", "s1")]
+    )
+    assert findings[0].type == FindingType.DECISION
+    assert findings[0].decision_required is True
