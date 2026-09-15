@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 from project_risk_agent.models import ProjectSignal
 
@@ -21,10 +21,7 @@ DEADLINE_PATTERN = re.compile(
     r"\b(?:by|before|no later than)\s+((?:today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\w+\s+\d{1,2})\b",
     re.IGNORECASE,
 )
-DECISION_PATTERN = re.compile(
-    r"\b(?:decision|decide|approval|approve|choose|sign[- ]off)\b",
-    re.IGNORECASE,
-)
+DECISION_PATTERN = re.compile(r"\b(?:decision|decide|approval|approve|choose|sign[- ]off)\b", re.IGNORECASE)
 
 
 def extract_decision_requests(signals: list[ProjectSignal]) -> list[DecisionRequest]:
