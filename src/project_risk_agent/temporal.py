@@ -36,7 +36,8 @@ def extract_date_move(signal: ProjectSignal) -> tuple[str, str] | None:
     match = DATE_MOVE.search(signal.content)
     if not match:
         return None
-    return match.group(1).strip(), match.group(2).strip()
+    start = re.sub(r"^from\s+", "", match.group(1).strip(), flags=re.IGNORECASE)
+    return start, match.group(2).strip()
 
 
 def age_days(signal: ProjectSignal, now: datetime) -> int:
