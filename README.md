@@ -58,6 +58,7 @@ The project has a deterministic, no-API-key baseline so contributors can experim
 ```bash
 pip install -e ".[dev]"
 project-risk-agent examples/scenarios/hidden_dependency_risk.json
+project-risk-agent examples/scenarios/hidden_dependency_risk.json --brief
 ```
 
 For the HTTP API:
@@ -68,6 +69,16 @@ uvicorn project_risk_agent.api:app --reload
 ```
 
 The API exposes `GET /health` and `POST /analyze`. The same core service is used by the CLI and API, so connectors and model providers remain replaceable.
+
+## Evaluation
+
+Synthetic evaluations are a first-class development artifact:
+
+```bash
+python evaluations/run.py
+```
+
+The current suite includes ten scenarios spanning explicit and inferred risks, active issues, dependencies, decisions, resource pressure, scope changes, quality regressions, vendor uncertainty, and false-positive controls. See `docs/evaluations.md`.
 
 ## Jira Cloud
 
@@ -89,12 +100,14 @@ The current foundation includes:
 2. file/text ingestion for local experimentation
 3. evidence and provenance handling
 4. risk/issue/dependency/decision classification
-5. cross-signal schedule/dependency reasoning
-6. executable synthetic evaluation cases
-7. a provider abstraction for deterministic or model-backed reasoning
-8. a minimal FastAPI surface
-9. a working Jira Cloud read connector
-10. connector templates for additional providers
+5. cross-signal and temporal schedule reasoning
+6. transparent finding prioritization
+7. structured decision-request extraction
+8. executable synthetic evaluation cases
+9. a provider abstraction for deterministic or model-backed reasoning
+10. a minimal FastAPI surface
+11. a working Jira Cloud read connector
+12. connector templates for additional providers
 
 Planned production connectors include Monday.com, Smartsheet, Slack, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
 
