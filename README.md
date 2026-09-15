@@ -51,18 +51,52 @@ Email / Chat / Meetings / PM Tools / Documents
 
 Connectors normalize source-specific data into a common `ProjectSignal` model. The risk engine does not need to know whether a signal originated in Jira, Monday, Smartsheet, Slack, Teams, Gmail, Outlook, or a meeting transcript.
 
+## Run it locally
+
+The project has a deterministic, no-API-key baseline so contributors can experiment without a paid model.
+
+```bash
+pip install -e ".[dev]"
+project-risk-agent examples/scenarios/hidden_dependency_risk.json
+```
+
+For the HTTP API:
+
+```bash
+pip install -e ".[api]"
+uvicorn project_risk_agent.api:app --reload
+```
+
+The API exposes `GET /health` and `POST /analyze`. The same core service is used by the CLI and API, so connectors and model providers remain replaceable.
+
+## Jira Cloud
+
+A working Jira Cloud read connector is included for local/personal integrations. Set:
+
+```bash
+export JIRA_BASE_URL="https://your-domain.atlassian.net"
+export JIRA_EMAIL="you@example.com"
+export JIRA_API_TOKEN="..."
+```
+
+Then use `JiraConnector` to list projects and normalize Jira issues into `ProjectSignal` objects. For a hosted multi-user application, the connector should be extended to Atlassian OAuth 2.0 rather than collecting individual API tokens.
+
 ## Initial scope
 
-The first release focuses on a clean, extensible foundation:
+The current foundation includes:
 
 1. common signal and finding schemas
 2. file/text ingestion for local experimentation
 3. evidence and provenance handling
 4. risk/issue/dependency/decision classification
-5. evaluation cases for project-risk reasoning
-6. connector interfaces that can be extended independently
+5. cross-signal schedule/dependency reasoning
+6. executable synthetic evaluation cases
+7. a provider abstraction for deterministic or model-backed reasoning
+8. a minimal FastAPI surface
+9. a working Jira Cloud read connector
+10. connector templates for additional providers
 
-Planned connectors include Jira, Monday.com, Smartsheet, Slack, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
+Planned production connectors include Monday.com, Smartsheet, Slack, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
 
 Integrations should use official APIs and least-privilege authentication. No connector should require users to surrender credentials to the project itself.
 
@@ -78,8 +112,8 @@ Integrations should use official APIs and least-privilege authentication. No con
   "impact": "high",
   "confidence": 0.86,
   "evidence": [
-    {"signal_id": "signal-104", "quote": "API delivery moved to Friday"},
-    {"signal_id": "signal-117", "quote": "Testing cannot start until API is available"}
+    {"signal_id": "signal-104", "excerpt": "API delivery moved to Friday"},
+    {"signal_id": "signal-117", "excerpt": "Testing cannot start until API is available"}
   ],
   "decision_required": true,
   "recommended_actions": [
@@ -113,7 +147,7 @@ Evaluations are treated as a first-class part of development. New reasoning beha
 
 ## Project status
 
-Early development. APIs and schemas may change.
+Early development. APIs and schemas may change. Jira is the first external connector implemented end-to-end; other provider directories currently contain architectural adapters/templates rather than claimed production integrations.
 
 ## License
 
