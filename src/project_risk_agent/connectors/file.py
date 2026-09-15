@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +35,7 @@ class FileConnector(ProjectConnector):
             id=f"file-{abs(hash(content))}",
             source="file",
             source_type="document",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             project_id=metadata.pop("project_id", None),
             author=metadata.pop("author", None),
             content=content,
