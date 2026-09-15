@@ -9,15 +9,18 @@ from project_risk_agent.analyzer import RiskAnalyzer
 from project_risk_agent.brief import management_brief
 from project_risk_agent.models import ProjectSignal
 from project_risk_agent.providers import DeterministicProvider
-from project_risk_agent.service import RiskAnalysisService
+from project_risk_agent.service import AnalysisResult, RiskAnalysisService
 
 
 class AnalyzeRequest(BaseModel):
     signals: list[ProjectSignal]
 
 
-def _changes(result) -> list[dict[str, object]]:
-    return [asdict(change) | {"attention_direction": change.attention_direction} for change in result.changed_findings]
+def _changes(result: AnalysisResult) -> list[dict[str, object]]:
+    return [
+        asdict(change) | {"attention_direction": change.attention_direction}
+        for change in result.changed_findings
+    ]
 
 
 def create_app():
