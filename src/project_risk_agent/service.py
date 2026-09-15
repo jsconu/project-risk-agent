@@ -20,6 +20,11 @@ class AnalysisResult:
         """Return findings requiring the most immediate human attention."""
         return prioritize(self.findings)
 
+    @property
+    def changed_findings(self):
+        """Return continuing findings whose material attributes changed."""
+        return self.delta.changed if self.delta else []
+
 
 class RiskAnalysisService:
     def __init__(self, provider: ModelProvider) -> None:
