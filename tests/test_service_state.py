@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from project_risk_agent.models import Finding, FindingType, ProjectSignal, RiskCategory
 from project_risk_agent.service import RiskAnalysisService
 from project_risk_agent.state import JsonProjectStateStore
@@ -24,7 +26,13 @@ def finding(identifier: str) -> Finding:
 
 def test_analyze_with_state_persists_and_returns_delta(tmp_path):
     store = JsonProjectStateStore(tmp_path / "state.json")
-    signal = ProjectSignal(id="s1", source="test", source_type="text", content="update")
+    signal = ProjectSignal(
+        id="s1",
+        source="test",
+        source_type="text",
+        timestamp=datetime.now(UTC),
+        content="update",
+    )
 
     first = RiskAnalysisService(StaticProvider([finding("a")])).analyze_with_state([signal], store)
     second = RiskAnalysisService(StaticProvider([finding("a"), finding("b")])).analyze_with_state([signal], store)
