@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import UTC, datetime
 
 from pydantic import BaseModel
@@ -13,6 +14,10 @@ from project_risk_agent.service import RiskAnalysisService
 
 class AnalyzeRequest(BaseModel):
     signals: list[ProjectSignal]
+
+
+def _changes(result) -> list[dict[str, object]]:
+    return [asdict(change) | {"attention_direction": change.attention_direction} for change in result.changed_findings]
 
 
 def create_app():
@@ -35,6 +40,7 @@ def create_app():
             "analyzed_at": datetime.now(UTC),
             "signals_analyzed": result.signals_analyzed,
             "findings": result.management_attention,
+            "changed_findings": _changes(result),
         }
 
     @app.post("/brief")
@@ -44,6 +50,7 @@ def create_app():
             "generated_at": datetime.now(UTC),
             "signals_analyzed": result.signals_analyzed,
             "findings": result.management_attention,
+            "changed_findings": _changes(result),
             "markdown": management_brief(result.management_attention),
         }
 
