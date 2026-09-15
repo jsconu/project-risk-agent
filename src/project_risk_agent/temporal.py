@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
+
 from project_risk_agent.models import ProjectSignal
 
 
