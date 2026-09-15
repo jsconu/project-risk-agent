@@ -1,0 +1,14 @@
+{
+  "name": "hidden_dependency_risk",
+  "signals": [
+    {"id": "s1", "content": "API delivery moved from Tuesday to Friday."},
+    {"id": "s2", "content": "UAT cannot start until the API is available."},
+    {"id": "s3", "content": "This is the second delivery-date change this month."}
+  ],
+  "expected": {
+    "category": "dependency",
+    "should_detect": true,
+    "evidence_signal_ids": ["s1", "s2", "s3"],
+    "should_not_require_explicit_risk_language": true
+  }
+}
