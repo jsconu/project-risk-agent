@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Project Risk Agent Demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    textarea { width: 100%; min-height: 260px; font: 14px/1.5 ui-monospace, monospace; }
+    button { margin: 12px 0; padding: 10px 16px; cursor: pointer; }
+    pre { white-space: pre-wrap; background: #f5f5f5; padding: 16px; border-radius: 8px; }
+    .hint { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Project Risk Agent</h1>
+  <p class="hint">Paste synthetic project updates as JSON, then send them to a local API.</p>
+  <textarea id="input">{
+  "signals": [
+    {
+      "id": "demo-1",
+      "source": "status-update",
+      "source_type": "text",
+      "project_id": "demo-project",
+      "author": "Project Lead",
+      "content": "The integration milestone moved from June 10 to June 24. The vendor still has not confirmed the API dependency."
+    },
+    {
+      "id": "demo-2",
+      "source": "meeting",
+      "source_type": "transcript",
+      "project_id": "demo-project",
+      "author": "Engineering Lead",
+      "content": "We are still on track for the overall launch, but the test environment is unstable and the team needs a decision on whether to add another engineer."
+    }
+  ]
+}</textarea>
+  <br>
+  <button id="run">Analyze</button>
+  <pre id="output">Results will appear here.</pre>
+  <script>
+    document.getElementById('run').addEventListener('click', async () => {
+      const output = document.getElementById('output');
+      try {
+        const payload = JSON.parse(document.getElementById('input').value);
+        const response = await fetch('http://127.0.0.1:8000/analyze', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        output.textContent = JSON.stringify(await response.json(), null, 2);
+      } catch (error) {
+        output.textContent = String(error) + '\n\nStart the local API with the instructions in the README.';
+      }
+    });
+  </script>
+</body>
+</html>
