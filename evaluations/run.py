@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 from project_risk_agent.analysis import SignalReasoner
@@ -29,14 +29,7 @@ def run_case(case: dict) -> dict:
     type_ok = expected_types <= actual_types if expected_types else not actual_types
     category_ok = expected_categories <= actual_categories
     evidence_ok = not expected.get("requires_evidence", False) or evidence_grounded
-    return {
-        "id": case["id"],
-        "pass": type_ok and category_ok and evidence_ok,
-        "finding_types": sorted(actual_types),
-        "categories": sorted(actual_categories),
-        "finding_count": len(findings),
-        "evidence_grounded": evidence_grounded,
-    }
+    return {"id": case["id"], "pass": type_ok and category_ok and evidence_ok, "finding_types": sorted(actual_types), "categories": sorted(actual_categories), "finding_count": len(findings), "evidence_grounded": evidence_grounded}
 
 
 def main() -> int:
