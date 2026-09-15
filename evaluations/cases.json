@@ -1,0 +1,45 @@
+[
+  {
+    "id": "schedule-dependency",
+    "description": "A dependency has slipped and downstream testing cannot begin.",
+    "signals": [
+      {"id": "s1", "source": "jira", "source_type": "work_item", "content": "API delivery moved from Tuesday to Friday."},
+      {"id": "s2", "source": "meeting", "source_type": "transcript", "content": "QA cannot start integration testing until the API is available."}
+    ],
+    "expected": {"finding_types": ["risk"], "categories": ["schedule", "dependency"], "requires_evidence": true}
+  },
+  {
+    "id": "active-issue",
+    "description": "A production defect is already blocking the project.",
+    "signals": [
+      {"id": "s3", "source": "slack", "source_type": "message", "content": "The release is blocked by a production authentication defect."}
+    ],
+    "expected": {"finding_types": ["issue"], "requires_evidence": true}
+  },
+  {
+    "id": "normal-update",
+    "description": "Routine progress with no stated warning signs.",
+    "signals": [
+      {"id": "s4", "source": "monday", "source_type": "update", "content": "Design review completed and documentation was published."}
+    ],
+    "expected": {"finding_types": [], "requires_evidence": true}
+  },
+  {
+    "id": "decision-needed",
+    "description": "A project team needs a management decision because two paths remain open.",
+    "signals": [
+      {"id": "s5", "source": "meeting", "source_type": "transcript", "content": "We need the sponsor to decide whether to move the launch or reduce scope by Friday."}
+    ],
+    "expected": {"finding_types": ["decision"], "requires_evidence": true}
+  },
+  {
+    "id": "hidden-risk",
+    "description": "No explicit 'at risk' language, but repeated movement creates a potential schedule risk.",
+    "signals": [
+      {"id": "s6", "source": "jira", "source_type": "work_item", "content": "Integration task moved from May 6 to May 13."},
+      {"id": "s7", "source": "meeting", "source_type": "transcript", "content": "We will need the integration complete before UAT can begin."},
+      {"id": "s8", "source": "slack", "source_type": "message", "content": "This is the second date change for the integration."}
+    ],
+    "expected": {"finding_types": ["risk"], "categories": ["schedule"], "requires_evidence": true}
+  }
+]
