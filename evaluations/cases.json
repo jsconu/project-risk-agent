@@ -6,7 +6,7 @@
       {"id": "s1", "source": "jira", "source_type": "work_item", "content": "API delivery moved from Tuesday to Friday."},
       {"id": "s2", "source": "meeting", "source_type": "transcript", "content": "QA cannot start integration testing until the API is available."}
     ],
-    "expected": {"finding_types": ["risk"], "categories": ["schedule", "dependency"], "requires_evidence": true}
+    "expected": {"finding_types": ["risk", "dependency"], "categories": ["schedule", "dependency"], "requires_evidence": true}
   },
   {
     "id": "active-issue",
@@ -23,7 +23,7 @@
   {
     "id": "decision-needed",
     "description": "A project team needs a management decision because two paths remain open.",
-    "signals": [{"id": "s5", "source": "meeting", "source_type": "transcript", "content": "We need the sponsor to decide whether to move the launch or reduce scope by Friday."}],
+    "signals": [{"id": "s5", "source": "meeting", "source_type": "transcript", "content": "We need the sponsor to make a decision: move the launch or reduce scope by Friday."}],
     "expected": {"finding_types": ["decision"], "requires_evidence": true}
   },
   {
