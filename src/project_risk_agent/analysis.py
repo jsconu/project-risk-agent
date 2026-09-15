@@ -9,7 +9,8 @@ from project_risk_agent.models import Evidence, Finding, FindingType, ProjectSig
 
 PATTERNS: tuple[tuple[str, RiskCategory], ...] = (
     (r"\b(delayed?|slipp(?:ed|ing)|miss(?:ed|ing)|behind|cannot start|can't start)\b", RiskCategory.SCHEDULE),
-    (r"\b(depend(?:ency|encies)|depends on|waiting for|blocked by)\b", RiskCategory.DEPENDENCY),
+    (r"\b(moved from .+ to .+|date change|date changed|schedule changed)\b", RiskCategory.SCHEDULE),
+    (r"\b(depend(?:ency|encies)|depends on|waiting for|blocked by|until .+ is available)\b", RiskCategory.DEPENDENCY),
     (r"\b(understaffed|no capacity|resource constraint|vacancy|bandwidth)\b", RiskCategory.RESOURCE),
     (r"\b(scope creep|out of scope|requirements changed|change request)\b", RiskCategory.SCOPE),
     (r"\b(defect|bug|failed test|quality issue|regression)\b", RiskCategory.QUALITY),
@@ -31,13 +32,7 @@ def _finding_id(signals: list[ProjectSignal], finding_type: FindingType, categor
 
 
 class SignalReasoner:
-    """Deterministic, evidence-first baseline for normalized project signals.
-
-    This is intentionally conservative: it only promotes a finding when the
-    input contains recognizable signal language, and every finding carries
-    source evidence. Model-backed inference can later sit behind this same
-    output contract.
-    """
+    """Deterministic, evidence-first baseline for normalized project signals."""
 
     def analyze(self, signals: list[ProjectSignal]) -> list[Finding]:
         findings: list[Finding] = []
@@ -61,7 +56,7 @@ class SignalReasoner:
                     id=_finding_id([signal], finding_type, category),
                     type=finding_type,
                     category=category,
-                    title=self._title(text, finding_type, category),
+                    title=self._title(finding_type, category),
                     description=text[:500],
                     likelihood=self._likelihood(text),
                     impact=self._impact(text),
@@ -87,9 +82,7 @@ class SignalReasoner:
             if len(group) > 1:
                 primary.evidence = [e for item in group for e in item.evidence]
                 primary.confidence = min(0.95, primary.confidence + 0.08 * (len(group) - 1))
-                primary.description = (
-                    f"Corroborated by {len(group)} project signals. " + primary.description
-                )
+                primary.description = f"Corroborated by {len(group)} project signals. " + primary.description
             output.append(primary)
         return output
 
@@ -98,14 +91,14 @@ class SignalReasoner:
         lowered = text.lower()
         if re.search(r"\b(decision|approve|approval|choose|needs sign[- ]off)\b", lowered):
             return FindingType.DECISION
-        if re.search(r"\b(blocked|failed|has failed|already missed|is delayed|outage)\b", lowered):
+        if re.search(r"\b(blocked|failed|has failed|already missed|outage)\b", lowered):
             return FindingType.ISSUE
         if re.search(r"\b(depends on|dependency|waiting for|blocked by)\b", lowered):
             return FindingType.DEPENDENCY
         return FindingType.RISK
 
     @staticmethod
-    def _title(text: str, finding_type: FindingType, category: RiskCategory) -> str:
+    def _title(finding_type: FindingType, category: RiskCategory) -> str:
         prefix = {
             FindingType.RISK: "Potential",
             FindingType.ISSUE: "Active",
