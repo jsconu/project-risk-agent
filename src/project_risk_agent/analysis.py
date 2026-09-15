@@ -9,7 +9,7 @@ from project_risk_agent.models import Evidence, Finding, FindingType, ProjectSig
 
 PATTERNS: tuple[tuple[str, RiskCategory], ...] = (
     (r"\b(delayed?|slipp(?:ed|ing)|miss(?:ed|ing)|behind|cannot start|can't start)\b", RiskCategory.SCHEDULE),
-    (r"\b(moved from .+ to .+|date change|date changed|schedule changed)\b", RiskCategory.SCHEDULE),
+    (r"\b(moved from .+ to .+|date change|date changed|schedule changed|second date change|another date change)\b", RiskCategory.SCHEDULE),
     (r"\b(depend(?:ency|encies)|depends on|waiting for|blocked by|until .+ is available)\b", RiskCategory.DEPENDENCY),
     (r"\b(understaffed|no capacity|resource constraint|vacancy|bandwidth)\b", RiskCategory.RESOURCE),
     (r"\b(scope creep|out of scope|requirements changed|change request)\b", RiskCategory.SCOPE),
@@ -44,13 +44,7 @@ class SignalReasoner:
             finding_type = self._finding_type(text)
             if not categories and finding_type != FindingType.DECISION:
                 continue
-
             category = categories[0] if categories else RiskCategory.OTHER
-            evidence = Evidence(
-                signal_id=signal.id,
-                excerpt=text[:500],
-                rationale="Signal contains language associated with a management concern.",
-            )
             findings.append(
                 Finding(
                     id=_finding_id([signal], finding_type, category),
@@ -62,20 +56,24 @@ class SignalReasoner:
                     impact=self._impact(text),
                     urgency=self._urgency(text),
                     confidence=0.68,
-                    evidence=[evidence],
+                    evidence=[Evidence(
+                        signal_id=signal.id,
+                        excerpt=text[:500],
+                        rationale="Signal contains language associated with a management concern.",
+                    )],
                     decision_required=finding_type == FindingType.DECISION,
                     recommended_actions=self._actions(finding_type, category),
                 )
             )
 
-        return self._corroborate(findings)
+        findings = self._corroborate(findings)
+        return self._infer_cross_signal_schedule_risk(signals, findings)
 
     @staticmethod
     def _corroborate(findings: list[Finding]) -> list[Finding]:
         groups: dict[tuple[FindingType, RiskCategory], list[Finding]] = defaultdict(list)
         for finding in findings:
             groups[(finding.type, finding.category)].append(finding)
-
         output: list[Finding] = []
         for group in groups.values():
             primary = group[0]
@@ -85,6 +83,56 @@ class SignalReasoner:
                 primary.description = f"Corroborated by {len(group)} project signals. " + primary.description
             output.append(primary)
         return output
+
+    def _infer_cross_signal_schedule_risk(
+        self, signals: list[ProjectSignal], findings: list[Finding]
+    ) -> list[Finding]:
+        lowered = [s.content.lower() for s in signals]
+        has_schedule_movement = any(
+            re.search(r"\b(moved from .+ to .+|date change|date changed|delayed?|slipp(?:ed|ing))\b", text)
+            for text in lowered
+        )
+        has_downstream_dependency = any(
+            re.search(r"\b(depends on|waiting for|blocked by|cannot start|until .+ is available)\b", text)
+            for text in lowered
+        )
+        if not (has_schedule_movement and has_downstream_dependency):
+            return findings
+
+        evidence = [
+            Evidence(signal_id=signal.id, excerpt=signal.content[:500], rationale="Cross-signal evidence for schedule exposure.")
+            for signal in signals
+            if re.search(
+                r"\b(moved from .+ to .+|date change|date changed|delayed?|slipp(?:ed|ing)|depends on|waiting for|blocked by|cannot start|until .+ is available)\b",
+                signal.content.lower(),
+            )
+        ]
+        existing = next(
+            (f for f in findings if f.type == FindingType.RISK and f.category == RiskCategory.SCHEDULE),
+            None,
+        )
+        if existing:
+            existing.evidence = evidence
+            existing.confidence = min(0.95, max(existing.confidence, 0.82))
+            existing.description = "Schedule movement and a downstream dependency are supported by multiple signals."
+            return findings
+
+        findings.append(
+            Finding(
+                id=_finding_id(signals, FindingType.RISK, RiskCategory.SCHEDULE),
+                type=FindingType.RISK,
+                category=RiskCategory.SCHEDULE,
+                title="Potential schedule concern",
+                description="Schedule movement is coupled to a downstream dependency.",
+                likelihood="high",
+                impact="medium",
+                urgency="medium",
+                confidence=0.82,
+                evidence=evidence,
+                recommended_actions=["Validate the dependency date and downstream contingency with the owners."],
+            )
+        )
+        return findings
 
     @staticmethod
     def _finding_type(text: str) -> FindingType:
