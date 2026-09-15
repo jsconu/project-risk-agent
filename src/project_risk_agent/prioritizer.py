@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from project_risk_agent.models import Finding
 
 
