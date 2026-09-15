@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from hashlib import sha256
 from typing import Any
 
 from project_risk_agent.connectors.base import ProjectConnector
@@ -25,12 +26,19 @@ class WebhookConnector(ProjectConnector):
         content = str(source_data.get("content", source_data.get("text", "")))
         timestamp = source_data.get("timestamp")
         if isinstance(timestamp, str):
-            parsed_timestamp = datetime.fromisoformat(timestamp)
+            parsed_timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            if parsed_timestamp.tzinfo is None:
+                parsed_timestamp = parsed_timestamp.replace(tzinfo=UTC)
         else:
             parsed_timestamp = datetime.now(UTC)
 
+        signal_id = source_data.get("id")
+        if signal_id is None:
+            digest = sha256(content.encode("utf-8")).hexdigest()[:16]
+            signal_id = f"webhook-{digest}"
+
         return ProjectSignal(
-            id=str(source_data.get("id", f"webhook-{abs(hash(content))}")),
+            id=str(signal_id),
             source=str(source_data.get("source", "webhook")),
             source_type=str(source_data.get("source_type", "webhook")),
             timestamp=parsed_timestamp,
