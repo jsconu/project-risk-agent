@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from project_risk_agent.models import Finding, ProjectSignal
+from project_risk_agent.prioritizer import prioritize
 from project_risk_agent.providers import ModelProvider
 
 
@@ -14,13 +15,7 @@ class AnalysisResult:
     @property
     def management_attention(self) -> list[Finding]:
         """Return findings requiring the most immediate human attention."""
-        urgency = {"high": 3, "medium": 2, "low": 1, None: 0}
-        impact = {"high": 3, "medium": 2, "low": 1, None: 0}
-        return sorted(
-            self.findings,
-            key=lambda f: (urgency[f.urgency] + impact[f.impact], f.confidence),
-            reverse=True,
-        )
+        return prioritize(self.findings)
 
 
 class RiskAnalysisService:
