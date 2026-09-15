@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import json
 from pathlib import Path
 
@@ -14,7 +15,7 @@ def run_case(case: dict) -> dict:
             source=item["source"],
             source_type=item["source_type"],
             content=item["content"],
-            timestamp=__import__("datetime").datetime.now(__import__("datetime").UTC),
+            timestamp=datetime.now(UTC),
         )
         for item in case["signals"]
     ]
