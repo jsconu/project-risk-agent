@@ -4,7 +4,9 @@ from collections import defaultdict
 from hashlib import sha256
 import re
 
+from project_risk_agent.evidence import evidence_for_signals
 from project_risk_agent.models import Evidence, Finding, FindingType, ProjectSignal, RiskCategory
+from project_risk_agent.temporal import has_repeated_change, signal_sequence
 
 
 PATTERNS: tuple[tuple[str, RiskCategory], ...] = (
@@ -56,7 +58,13 @@ class SignalReasoner:
                     impact=self._impact(text),
                     urgency=self._urgency(text),
                     confidence=0.68,
-                    evidence=[Evidence(signal_id=signal.id, excerpt=text[:500], rationale="Signal contains language associated with a management concern.")],
+                    evidence=[
+                        Evidence(
+                            signal_id=signal.id,
+                            excerpt=text[:500],
+                            rationale="Signal contains language associated with a management concern.",
+                        )
+                    ],
                     decision_required=finding_type == FindingType.DECISION,
                     recommended_actions=self._actions(finding_type, category),
                 )
@@ -86,42 +94,55 @@ class SignalReasoner:
         return output
 
     def _infer_cross_signal_schedule_risk(self, signals: list[ProjectSignal], findings: list[Finding]) -> list[Finding]:
-        lowered = [s.content.lower() for s in signals]
-        has_schedule_movement = any(re.search(r"\b(moved from .+ to .+|date change|date changed|delayed?|slipp(?:ed|ing))\b", text) for text in lowered)
-        has_downstream_dependency = any(re.search(r"\b(depends on|dependency|dependencies|waiting for|blocked by|cannot start|until .+ is available)\b", text) for text in lowered)
-        if not (has_schedule_movement and has_downstream_dependency):
+        ordered = signal_sequence(signals)
+        movement_pattern = r"\b(moved from .+ to .+|date change|date changed|schedule changed|delayed?|slipp(?:ed|ing)|pushed)\b"
+        dependency_pattern = r"\b(depends on|dependency|dependencies|waiting for|blocked by|cannot start|until .+ is available)\b"
+        has_schedule_movement = any(re.search(movement_pattern, s.content.lower()) for s in ordered)
+        has_downstream_dependency = any(re.search(dependency_pattern, s.content.lower()) for s in ordered)
+        repeated_change = has_repeated_change(ordered)
+        if not ((has_schedule_movement and has_downstream_dependency) or repeated_change):
             return findings
-        evidence = [
-            Evidence(signal_id=signal.id, excerpt=signal.content[:500], rationale="Cross-signal evidence for schedule exposure.")
-            for signal in signals
-            if re.search(r"\b(moved from .+ to .+|date change|date changed|delayed?|slipp(?:ed|ing)|depends on|dependency|dependencies|waiting for|blocked by|cannot start|until .+ is available)\b", signal.content.lower())
-        ]
+
+        evidence = evidence_for_signals(
+            ordered,
+            lambda signal: bool(re.search(movement_pattern + "|" + dependency_pattern, signal.content.lower())),
+            "Cross-signal evidence for schedule exposure.",
+        )
         existing = next((f for f in findings if f.type == FindingType.RISK and f.category == RiskCategory.SCHEDULE), None)
         if existing:
-            existing.evidence = evidence
-            existing.confidence = min(0.95, max(existing.confidence, 0.82))
-            existing.description = "Schedule movement and a downstream dependency are supported by multiple signals."
-            existing.likelihood = "high"
+            existing.evidence = evidence or existing.evidence
+            existing.confidence = min(0.95, max(existing.confidence, 0.82 if has_downstream_dependency else 0.78))
+            if repeated_change and has_downstream_dependency:
+                existing.description = "Repeated schedule movement is coupled to a downstream dependency."
+                existing.likelihood = "high"
+            elif repeated_change:
+                existing.description = "Repeated schedule or status changes indicate increasing schedule exposure."
             return findings
-        findings.append(Finding(
-            id=_finding_id(signals, FindingType.RISK, RiskCategory.SCHEDULE),
-            type=FindingType.RISK,
-            category=RiskCategory.SCHEDULE,
-            title="Potential schedule concern",
-            description="Schedule movement is coupled to a downstream dependency.",
-            likelihood="high",
-            impact="medium",
-            urgency="medium",
-            confidence=0.82,
-            evidence=evidence,
-            recommended_actions=["Validate the dependency date and downstream contingency with the owners."],
-        ))
+
+        findings.append(
+            Finding(
+                id=_finding_id(ordered, FindingType.RISK, RiskCategory.SCHEDULE),
+                type=FindingType.RISK,
+                category=RiskCategory.SCHEDULE,
+                title="Potential schedule concern",
+                description=(
+                    "Repeated schedule or status changes are creating schedule exposure."
+                    if repeated_change and not has_downstream_dependency
+                    else "Schedule movement is coupled to a downstream dependency."
+                ),
+                likelihood="high" if has_downstream_dependency else "medium",
+                impact="medium",
+                urgency="medium",
+                confidence=0.82 if has_downstream_dependency else 0.78,
+                evidence=evidence,
+                recommended_actions=["Validate the dependency date and downstream contingency with the owners."],
+            )
+        )
         return findings
 
     @staticmethod
     def _finding_type(text: str) -> FindingType:
         lowered = text.lower()
-        # Explicit risk framing takes precedence over generic status words.
         if re.search(r"\b(decision|approve|approval|choose|needs sign[- ]off)\b", lowered):
             return FindingType.DECISION
         if re.search(r"\b(risk|at risk|may miss|might miss|could miss|potential)\b", lowered):
