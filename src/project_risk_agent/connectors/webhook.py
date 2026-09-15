@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from project_risk_agent.connectors.base import ProjectConnector
@@ -25,9 +25,9 @@ class WebhookConnector(ProjectConnector):
         content = str(source_data.get("content", source_data.get("text", "")))
         timestamp = source_data.get("timestamp")
         if isinstance(timestamp, str):
-            parsed_timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            parsed_timestamp = datetime.fromisoformat(timestamp)
         else:
-            parsed_timestamp = datetime.now(timezone.utc)
+            parsed_timestamp = datetime.now(UTC)
 
         return ProjectSignal(
             id=str(source_data.get("id", f"webhook-{abs(hash(content))}")),
