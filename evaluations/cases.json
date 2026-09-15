@@ -11,34 +11,61 @@
   {
     "id": "active-issue",
     "description": "A production defect is already blocking the project.",
-    "signals": [
-      {"id": "s3", "source": "slack", "source_type": "message", "content": "The release is blocked by a production authentication defect."}
-    ],
+    "signals": [{"id": "s3", "source": "slack", "source_type": "message", "content": "The release is currently blocked by a production authentication defect."}],
     "expected": {"finding_types": ["issue"], "requires_evidence": true}
   },
   {
     "id": "normal-update",
     "description": "Routine progress with no stated warning signs.",
-    "signals": [
-      {"id": "s4", "source": "monday", "source_type": "update", "content": "Design review completed and documentation was published."}
-    ],
+    "signals": [{"id": "s4", "source": "monday", "source_type": "update", "content": "Design review completed and documentation was published."}],
     "expected": {"finding_types": [], "requires_evidence": true}
   },
   {
     "id": "decision-needed",
     "description": "A project team needs a management decision because two paths remain open.",
-    "signals": [
-      {"id": "s5", "source": "meeting", "source_type": "transcript", "content": "We need the sponsor to decide whether to move the launch or reduce scope by Friday."}
-    ],
+    "signals": [{"id": "s5", "source": "meeting", "source_type": "transcript", "content": "We need the sponsor to decide whether to move the launch or reduce scope by Friday."}],
     "expected": {"finding_types": ["decision"], "requires_evidence": true}
   },
   {
     "id": "hidden-risk",
-    "description": "No explicit 'at risk' language, but repeated movement creates a potential schedule risk.",
+    "description": "Repeated movement and a downstream dependency imply schedule exposure.",
     "signals": [
       {"id": "s6", "source": "jira", "source_type": "work_item", "content": "Integration task moved from May 6 to May 13."},
       {"id": "s7", "source": "meeting", "source_type": "transcript", "content": "We will need the integration complete before UAT can begin."},
       {"id": "s8", "source": "slack", "source_type": "message", "content": "This is the second date change for the integration."}
+    ],
+    "expected": {"finding_types": ["risk"], "categories": ["schedule"], "requires_evidence": true}
+  },
+  {
+    "id": "resource-pressure",
+    "description": "A staffing constraint creates a resource concern.",
+    "signals": [{"id": "s9", "source": "email", "source_type": "message", "content": "The team is understaffed for the remaining testing work."}],
+    "expected": {"finding_types": ["risk"], "categories": ["resource"], "requires_evidence": true}
+  },
+  {
+    "id": "scope-change",
+    "description": "Requirements changed and need scope management.",
+    "signals": [{"id": "s10", "source": "meeting", "source_type": "transcript", "content": "The requirements changed and this new reporting capability is out of scope."}],
+    "expected": {"finding_types": ["risk"], "categories": ["scope"], "requires_evidence": true}
+  },
+  {
+    "id": "quality-regression",
+    "description": "A regression introduces a quality concern.",
+    "signals": [{"id": "s11", "source": "jira", "source_type": "work_item", "content": "A regression was found in the checkout flow."}],
+    "expected": {"finding_types": ["risk"], "categories": ["quality"], "requires_evidence": true}
+  },
+  {
+    "id": "vendor-risk",
+    "description": "A third-party delivery concern is emerging.",
+    "signals": [{"id": "s12", "source": "email", "source_type": "message", "content": "The vendor has not confirmed the revised integration date."}],
+    "expected": {"finding_types": ["risk"], "categories": ["vendor"], "requires_evidence": true}
+  },
+  {
+    "id": "repeated-change-without-dependency",
+    "description": "Repeated schedule changes should produce a schedule risk even without explicit dependency language.",
+    "signals": [
+      {"id": "s13", "source": "jira", "source_type": "work_item", "content": "The delivery date moved from June 3 to June 7."},
+      {"id": "s14", "source": "email", "source_type": "message", "content": "The delivery date shifted again to June 10."}
     ],
     "expected": {"finding_types": ["risk"], "categories": ["schedule"], "requires_evidence": true}
   }
