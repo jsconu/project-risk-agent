@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel
 
 from project_risk_agent.analyzer import RiskAnalyzer
+from project_risk_agent.brief import management_brief
 from project_risk_agent.models import ProjectSignal
 from project_risk_agent.providers import DeterministicProvider
 from project_risk_agent.service import RiskAnalysisService
@@ -33,7 +34,17 @@ def create_app():
         return {
             "analyzed_at": datetime.now(UTC),
             "signals_analyzed": result.signals_analyzed,
-            "findings": result.findings,
+            "findings": result.management_attention,
+        }
+
+    @app.post("/brief")
+    def brief(request: AnalyzeRequest) -> dict[str, object]:
+        result = service.analyze(request.signals)
+        return {
+            "generated_at": datetime.now(UTC),
+            "signals_analyzed": result.signals_analyzed,
+            "findings": result.management_attention,
+            "markdown": management_brief(result.management_attention),
         }
 
     return app
