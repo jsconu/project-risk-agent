@@ -22,8 +22,7 @@ class DeterministicProvider:
     reasoner: object
 
     def analyze(self, signals: list[ProjectSignal]) -> list[Finding]:
-        analyze = getattr(self.reasoner, "analyze")
-        return analyze(signals)
+        return self.reasoner.analyze(signals)
 
 
 class StructuredModelProvider(Protocol):
@@ -37,15 +36,8 @@ _FINDING_LIST = TypeAdapter(list[Finding])
 
 
 def parse_model_findings(payload: object) -> list[Finding]:
-    """Validate model output before it enters the application domain.
-
-    Providers may return a JSON-compatible list or a wrapper containing a
-    ``findings`` list. Invalid or malformed output raises ``ValueError``
-    instead of silently creating ungrounded findings.
-    """
-    candidate = payload
-    if isinstance(payload, dict) and "findings" in payload:
-        candidate = payload["findings"]
+    """Validate model output before it enters the application domain."""
+    candidate = payload["findings"] if isinstance(payload, dict) and "findings" in payload else payload
     try:
         return _FINDING_LIST.validate_python(candidate)
     except ValidationError as exc:
