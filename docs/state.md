@@ -19,20 +19,26 @@ for finding in result.delta.new:
 
 for finding in result.delta.resolved:
     print("RESOLVED:", finding.title)
+
+for change in result.changed_findings:
+    print("CHANGED:", change.finding_id, change.attention_direction)
 ```
 
 The local JSON store is intentionally simple. It is suitable for experiments and single-process deployments, not as a multi-user database.
 
-## Why this matters
+## Longitudinal signals
 
-A useful project agent should accumulate context and answer questions such as:
+When a finding remains present across runs, the delta layer compares material attributes such as likelihood, impact, urgency, confidence, ownership, decision state, and recommended actions. Each change includes the prior and current management-attention scores plus a direction (`increased`, `decreased`, or `unchanged`).
+
+This makes the agent useful for questions such as:
 
 - What changed since the last review?
 - Which risks are new?
-- Which findings are continuing?
-- Which previously observed findings disappeared?
+- Which continuing risks are getting more serious?
+- Which findings are resolved?
+- Which findings need renewed human attention?
 
-The current implementation compares stable finding IDs. Future state backends can add richer history, trend detection, configurable retention, and database-backed concurrency without changing the analysis interface.
+The comparison uses stable finding IDs. Future state backends can add richer history, trend detection, configurable retention, and database-backed concurrency without changing the analysis interface.
 
 ## Privacy
 
