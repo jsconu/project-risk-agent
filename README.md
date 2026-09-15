@@ -70,6 +70,22 @@ uvicorn project_risk_agent.api:app --reload
 
 The API exposes `GET /health`, `POST /analyze`, and `POST /brief`. `/analyze` returns structured findings; `/brief` also returns a concise Markdown management brief. Both use the same core service as the CLI.
 
+## Persistent project intelligence
+
+The service can retain a local snapshot and compare the next analysis with the previous one. This creates the foundation for an agent that understands **change over time**, rather than repeatedly summarizing the current state from scratch.
+
+```python
+from project_risk_agent.state import JsonProjectStateStore
+
+store = JsonProjectStateStore(".project-risk/state.json")
+result = service.analyze_with_state(signals, store)
+
+print("New:", [f.title for f in result.delta.new])
+print("Resolved:", [f.title for f in result.delta.resolved])
+```
+
+The local JSON store is intended for experimentation and single-process deployments. See `docs/state.md` for the persistence model and privacy considerations.
+
 ## Evaluation
 
 Synthetic evaluations are a first-class development artifact:
@@ -106,9 +122,10 @@ The current foundation includes:
 8. executable synthetic evaluation cases
 9. a provider abstraction for deterministic or model-backed reasoning
 10. a minimal FastAPI surface with analysis and management-brief endpoints
-11. a working Jira Cloud read connector
-12. a working Slack read connector
-13. connector templates for additional providers
+11. persistent local project state and finding-delta detection
+12. a working Jira Cloud read connector
+13. a working Slack read connector
+14. connector templates for additional providers
 
 Planned production connectors include Monday.com, Smartsheet, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
 
