@@ -68,7 +68,7 @@ pip install -e ".[api]"
 uvicorn project_risk_agent.api:app --reload
 ```
 
-The API exposes `GET /health` and `POST /analyze`. The same core service is used by the CLI and API, so connectors and model providers remain replaceable.
+The API exposes `GET /health`, `POST /analyze`, and `POST /brief`. `/analyze` returns structured findings; `/brief` also returns a concise Markdown management brief. Both use the same core service as the CLI.
 
 ## Evaluation
 
@@ -105,11 +105,12 @@ The current foundation includes:
 7. structured decision-request extraction
 8. executable synthetic evaluation cases
 9. a provider abstraction for deterministic or model-backed reasoning
-10. a minimal FastAPI surface
+10. a minimal FastAPI surface with analysis and management-brief endpoints
 11. a working Jira Cloud read connector
-12. connector templates for additional providers
+12. a working Slack read connector
+13. connector templates for additional providers
 
-Planned production connectors include Monday.com, Smartsheet, Slack, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
+Planned production connectors include Monday.com, Smartsheet, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
 
 Integrations should use official APIs and least-privilege authentication. No connector should require users to surrender credentials to the project itself.
 
@@ -160,7 +161,7 @@ Evaluations are treated as a first-class part of development. New reasoning beha
 
 ## Project status
 
-Early development. APIs and schemas may change. Jira is the first external connector implemented end-to-end; other provider directories currently contain architectural adapters/templates rather than claimed production integrations.
+Early development. APIs and schemas may change. Jira and Slack are the first external connectors implemented end-to-end; other provider directories currently contain architectural adapters/templates rather than claimed production integrations.
 
 ## License
 
