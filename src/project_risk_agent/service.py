@@ -9,6 +9,7 @@ from project_risk_agent.models import Finding, ProjectSignal
 from project_risk_agent.prioritizer import prioritize
 from project_risk_agent.providers import ModelProvider
 from project_risk_agent.state import ProjectSnapshot, ProjectStateStore
+from project_risk_agent.trajectory import FindingTrajectory, trajectories
 
 
 @dataclass
@@ -45,6 +46,15 @@ class AnalysisResult:
     def freshness_for(self, finding_id: str) -> FindingFreshness | None:
         """Look up the evidence freshness for a finding."""
         return next((item for item in self.freshness or [] if item.finding_id == finding_id), None)
+
+    def trajectory_for(self, finding_id: str) -> FindingTrajectory | None:
+        """Return the longitudinal trajectory for a finding."""
+        return next((item for item in self.trajectories if item.finding_id == finding_id), None)
+
+    @property
+    def trajectories(self) -> list[FindingTrajectory]:
+        """Classify current findings by longitudinal state and evidence freshness."""
+        return trajectories(self.findings, self.delta, self.freshness)
 
 
 class RiskAnalysisService:
