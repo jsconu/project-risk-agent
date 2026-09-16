@@ -83,6 +83,8 @@ Run the same command later with updated signals to see material finding changes 
 
 Trajectory output reports `new`, `persistent`, `improving`, `deteriorating`, and `stale` active findings. A finding is `resolved` only with fresh, explicitly linked resolution evidence; simply omitting it in a later run never closes it.
 
+Explicit decision requests are emitted separately in CLI and API output. Each has a readiness status: `ready`, `missing_owner`, `missing_deadline`, or `missing_owner_and_deadline`. This is an accountability aid for human review; it does not make or execute project decisions.
+
 For the HTTP API:
 
 ```bash
@@ -162,6 +164,7 @@ The current foundation includes:
 15. connector templates for additional providers
 16. a lightweight local demo UI
 17. an optional OpenAI Responses API provider with schema and evidence validation
+18. a decision queue that surfaces missing ownership and deadlines
 
 Planned production connectors include Monday.com, Smartsheet, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
 

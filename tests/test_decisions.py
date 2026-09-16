@@ -13,6 +13,7 @@ def test_extract_decision_request_owner_and_deadline():
     result = extract_decision_requests([signal])
     assert result[0].owner == "sponsor"
     assert result[0].deadline == "Friday"
+    assert result[0].readiness == "ready"
 
 
 def test_non_decision_signal_is_ignored():
@@ -24,3 +25,17 @@ def test_non_decision_signal_is_ignored():
         content="The team completed testing.",
     )
     assert extract_decision_requests([signal]) == []
+
+
+def test_decision_readiness_identifies_missing_accountability():
+    signal = ProjectSignal(
+        id="s2",
+        source="meeting",
+        source_type="transcript",
+        timestamp="2026-01-01T00:00:00Z",
+        content="A decision is needed to choose the rollout approach.",
+    )
+
+    result = extract_decision_requests([signal])
+
+    assert result[0].readiness == "missing_owner_and_deadline"

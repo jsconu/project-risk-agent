@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from project_risk_agent.delta import FindingChange, FindingDelta, compare_findings
+from project_risk_agent.decisions import DecisionRequest, extract_decision_requests
 from project_risk_agent.freshness import FindingFreshness, freshness_for_findings
 from project_risk_agent.models import Finding, ProjectSignal
 from project_risk_agent.prioritizer import prioritize
@@ -17,6 +18,7 @@ class AnalysisResult:
     findings: list[Finding]
     signals_analyzed: int
     signals: list[ProjectSignal] | None = None
+    decision_requests: list[DecisionRequest] | None = None
     delta: FindingDelta | None = None
     analyzed_at: datetime | None = None
     freshness: list[FindingFreshness] | None = None
@@ -68,6 +70,7 @@ class RiskAnalysisService:
             findings=findings,
             signals_analyzed=len(signals),
             signals=signals,
+            decision_requests=extract_decision_requests(signals),
             analyzed_at=datetime.now(UTC),
             freshness=freshness_for_findings(findings, signals),
         )

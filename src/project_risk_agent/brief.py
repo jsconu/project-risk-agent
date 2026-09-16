@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from project_risk_agent.decisions import DecisionRequest
 from project_risk_agent.models import Finding
 
 
-def management_brief(findings: list[Finding]) -> str:
+def management_brief(
+    findings: list[Finding], decision_requests: list[DecisionRequest] | None = None
+) -> str:
     """Render findings as a concise, human-reviewable management brief."""
-    if not findings:
+    if not findings and not decision_requests:
         return "No management-relevant findings detected."
 
     lines = ["# Project Risk Brief", ""]
@@ -26,5 +29,15 @@ def management_brief(findings: list[Finding]) -> str:
             lines.extend(f"- {action}" for action in finding.recommended_actions)
         if finding.decision_required:
             lines.extend(["", "**Management decision required:** Yes"])
+        lines.append("")
+    if decision_requests:
+        lines.extend(["## Decision queue", ""])
+        for request in decision_requests:
+            details = [f"**Readiness:** {request.readiness.replace('_', ' ')}"]
+            if request.owner:
+                details.append(f"**Owner:** {request.owner}")
+            if request.deadline:
+                details.append(f"**Deadline:** {request.deadline}")
+            lines.extend([f"- `{request.signal_id}` — {request.description}", "  " + "  ".join(details)])
         lines.append("")
     return "\n".join(lines)
