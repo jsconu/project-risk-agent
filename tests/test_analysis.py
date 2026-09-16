@@ -20,6 +20,12 @@ def test_dependency_is_classified_separately_from_schedule():
     assert findings[0].category == RiskCategory.DEPENDENCY
 
 
+def test_cannot_start_language_is_classified_as_dependency():
+    findings = SignalReasoner().analyze([signal("QA cannot start integration testing until the API is available.", "s1")])
+    assert findings[0].type == FindingType.DEPENDENCY
+    assert findings[0].category == RiskCategory.DEPENDENCY
+
+
 def test_multiple_signals_are_corroborated_with_all_evidence():
     findings = SignalReasoner().analyze([
         signal("The release is delayed by two days.", "s1"),
