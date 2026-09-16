@@ -52,3 +52,12 @@ def test_decision_language_creates_decision_finding():
     findings = SignalReasoner().analyze([signal("Leadership approval is needed to choose the revised launch date.", "s1")])
     assert findings[0].type == FindingType.DECISION
     assert findings[0].decision_required is True
+
+
+def test_decision_finding_preserves_owner_and_deadline():
+    findings = SignalReasoner().analyze([
+        signal("We need the sponsor to make a decision: move the launch or reduce scope by Friday.", "s1")
+    ])
+    assert findings[0].type == FindingType.DECISION
+    assert findings[0].decision_owner == "sponsor"
+    assert findings[0].decision_deadline == "Friday"
