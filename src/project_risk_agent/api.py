@@ -18,6 +18,14 @@ def _changes(result: AnalysisResult) -> list[dict[str, object]]:
     return [asdict(change) | {"attention_direction": change.attention_direction} for change in result.changed_findings]
 
 
+def _trajectories(result: AnalysisResult) -> list[dict[str, object]]:
+    return [asdict(item) for item in result.trajectories]
+
+
+def _freshness(result: AnalysisResult) -> list[dict[str, object]]:
+    return [asdict(item) for item in result.freshness or []]
+
+
 def create_app():
     try:
         from fastapi import FastAPI
@@ -45,6 +53,8 @@ def create_app():
             "trend": result.trend,
             "findings": result.management_attention,
             "changed_findings": _changes(result),
+            "trajectories": _trajectories(result),
+            "freshness": _freshness(result),
         }
 
     @app.post("/analyze")
