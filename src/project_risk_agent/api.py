@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import UTC, datetime
-
 from pydantic import BaseModel
 
 from project_risk_agent.analyzer import RiskAnalyzer
@@ -17,10 +15,7 @@ class AnalyzeRequest(BaseModel):
 
 
 def _changes(result: AnalysisResult) -> list[dict[str, object]]:
-    return [
-        asdict(change) | {"attention_direction": change.attention_direction}
-        for change in result.changed_findings
-    ]
+    return [asdict(change) | {"attention_direction": change.attention_direction} for change in result.changed_findings]
 
 
 def create_app():
@@ -43,26 +38,23 @@ def create_app():
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.post("/analyze")
-    def analyze(request: AnalyzeRequest) -> dict[str, object]:
-        result = service.analyze(request.signals)
+    def response(result: AnalysisResult) -> dict[str, object]:
         return {
-            "analyzed_at": datetime.now(UTC),
+            "analyzed_at": result.analyzed_at,
             "signals_analyzed": result.signals_analyzed,
+            "trend": result.trend,
             "findings": result.management_attention,
             "changed_findings": _changes(result),
         }
 
+    @app.post("/analyze")
+    def analyze(request: AnalyzeRequest) -> dict[str, object]:
+        return response(service.analyze(request.signals))
+
     @app.post("/brief")
     def brief(request: AnalyzeRequest) -> dict[str, object]:
         result = service.analyze(request.signals)
-        return {
-            "generated_at": datetime.now(UTC),
-            "signals_analyzed": result.signals_analyzed,
-            "findings": result.management_attention,
-            "changed_findings": _changes(result),
-            "markdown": management_brief(result.management_attention),
-        }
+        return response(result) | {"markdown": management_brief(result.management_attention)}
 
     return app
 
