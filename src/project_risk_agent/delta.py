@@ -45,6 +45,7 @@ def _changed_fields(previous: Finding, current: Finding) -> tuple[str, ...]:
         "owner",
         "decision_required",
         "decision_owner",
+        "decision_deadline",
         "recommended_actions",
     )
     return tuple(field for field in fields if getattr(previous, field) != getattr(current, field))
