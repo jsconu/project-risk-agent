@@ -29,3 +29,19 @@ def test_api_exposes_health_and_brief():
     assert body["signals_analyzed"] == 1
     assert "# Project Risk Brief" in body["markdown"]
     assert body["findings"][0]["category"] == "schedule"
+
+
+def test_api_allows_local_demo_origin():
+    from fastapi.testclient import TestClient
+
+    client = TestClient(create_app())
+    response = client.options(
+        "/analyze",
+        headers={
+            "Origin": "http://127.0.0.1:8001",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:8001"
