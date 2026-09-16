@@ -32,6 +32,9 @@ def main() -> None:
 
     if args.brief:
         print(management_brief(findings))
+        print(f"\nTrajectory: {result.trend}")
+        for trajectory in result.trajectories:
+            print(f"- {trajectory.finding_id}: {trajectory.state} ({trajectory.freshness})")
         if result.changed_findings:
             print("\nChanged findings:")
             for change in result.changed_findings:
@@ -40,8 +43,27 @@ def main() -> None:
         return
 
     payload = {
+        "analyzed_at": result.analyzed_at,
         "signals_analyzed": result.signals_analyzed,
+        "trend": result.trend,
         "findings": [finding.model_dump(mode="json") for finding in findings],
+        "trajectories": [
+            {
+                "finding_id": item.finding_id,
+                "state": item.state,
+                "attention_direction": item.attention_direction,
+                "freshness": item.freshness,
+            }
+            for item in result.trajectories
+        ],
+        "freshness": [
+            {
+                "finding_id": item.finding_id,
+                "age_days": item.age_days,
+                "status": item.status,
+            }
+            for item in result.freshness or []
+        ],
         "changed_findings": [
             {
                 "finding_id": change.finding_id,
