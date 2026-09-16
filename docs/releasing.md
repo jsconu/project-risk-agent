@@ -4,19 +4,26 @@ Releases are published to PyPI via [Trusted Publishing][trusted-publishing], so
 no PyPI API token is stored in this repository. `.github/workflows/publish.yml`
 builds the package and publishes it whenever a GitHub Release is published.
 
-## One-time setup (maintainer, on pypi.org)
+## One-time setup (maintainer)
 
-1. Create the `project-risk-agent` project on [PyPI][pypi] (the first publish
-   can also register it, but pre-creating it lets you configure trusted
-   publishing before the first release).
-2. On the project's PyPI page, go to **Publishing** and add a trusted
-   publisher:
+The `project-risk-agent` project does not exist on PyPI yet, so the first
+publish uses a **pending publisher** rather than a token — PyPI creates the
+project automatically the first time the linked workflow publishes.
+
+1. On [pypi.org][pypi], go to **Your account → Publishing**
+   (`https://pypi.org/manage/account/publishing/`).
+2. Under "Add a new pending publisher", fill in:
+   - PyPI Project Name: `project-risk-agent`
    - Owner: `jsconu`
-   - Repository: `project-risk-agent`
-   - Workflow: `publish.yml`
-   - Environment: `pypi`
-3. In this repository's GitHub settings, create an environment named `pypi`
-   (Settings → Environments). No secrets are needed there.
+   - Repository name: `project-risk-agent`
+   - Workflow name: `publish.yml`
+   - Environment name: `pypi`
+3. Click **Add**.
+4. In this repository's GitHub settings, create an environment named `pypi`
+   (Settings → Environments → New environment). No secrets are needed there.
+
+See PyPI's [guide to creating a project through OIDC][oidc-create] for
+background on the pending-publisher flow.
 
 ## Cutting a release
 
@@ -31,3 +38,4 @@ builds the package and publishes it whenever a GitHub Release is published.
 
 [trusted-publishing]: https://docs.pypi.org/trusted-publishers/
 [pypi]: https://pypi.org/
+[oidc-create]: https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/
