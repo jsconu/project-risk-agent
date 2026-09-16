@@ -1,5 +1,8 @@
 # Project Risk Agent
 
+[![Tests](https://github.com/jsconu/project-risk-agent/actions/workflows/test.yml/badge.svg)](https://github.com/jsconu/project-risk-agent/actions/workflows/test.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 An open-source AI agent that turns unstructured project information into evidence-backed risks, issues, dependencies, and management decisions.
 
 ## What it does
@@ -214,7 +217,9 @@ See `SECURITY.md` for the security model and threat considerations.
 
 This project is deliberately designed for community improvement. A contributor should be able to add a connector or improve the risk reasoning without understanding the entire codebase.
 
-See `CONTRIBUTING.md`, `docs/connectors.md`, and `docs/connector-template.md`.
+See `CONTRIBUTING.md`, `docs/connectors.md`, `docs/connector-template.md`, and
+`docs/releasing.md` for the release process. Participation is governed by our
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 Evaluations are treated as a first-class part of development. New reasoning behavior should ideally include an evaluation case demonstrating what improved or regressed.
 

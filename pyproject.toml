@@ -4,13 +4,43 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-risk-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "An open-source AI agent for evidence-backed project risk intelligence."
 readme = "README.md"
 requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+  { name = "Project Risk Agent contributors" },
+]
+keywords = [
+  "project-management",
+  "risk-management",
+  "ai-agent",
+  "llm",
+  "jira",
+  "slack",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Office/Business",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+]
 dependencies = [
   "pydantic>=2.0,<3.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/jsconu/project-risk-agent"
+Repository = "https://github.com/jsconu/project-risk-agent"
+Changelog = "https://github.com/jsconu/project-risk-agent/blob/main/CHANGELOG.md"
+Issues = "https://github.com/jsconu/project-risk-agent/issues"
 
 [project.optional-dependencies]
 api = [

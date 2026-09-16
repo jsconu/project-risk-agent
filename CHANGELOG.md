@@ -6,6 +6,11 @@ The project is in early development and does not yet guarantee API stability.
 
 ## [Unreleased]
 
+- Apache-2.0 `LICENSE`, Code of Conduct, and GitHub issue/PR templates for open-source release.
+- Packaging metadata (license, classifiers, keywords, project URLs) and a PyPI publish workflow using Trusted Publishing.
+
+## [0.2.0]
+
 - Longitudinal finding trajectories: new, persistent, improving, deteriorating, stale, and explicitly confirmed resolved.
 - Resolution guard: a finding absent from a later run is not declared resolved without fresh, linked resolution evidence.
 - Optional OpenAI Responses API provider with strict structured-output, domain-schema, and supplied-evidence validation.

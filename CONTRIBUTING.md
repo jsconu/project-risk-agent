@@ -2,6 +2,8 @@
 
 Thanks for helping improve Project Risk Agent.
 
+Participation in this project is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## What we want contributors to improve
 
 The project has four especially useful contribution areas:
