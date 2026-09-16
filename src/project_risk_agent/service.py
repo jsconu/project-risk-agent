@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from project_risk_agent.delta import FindingDelta, compare_findings
+from project_risk_agent.delta import FindingChange, FindingDelta, compare_findings
 from project_risk_agent.models import Finding, ProjectSignal
 from project_risk_agent.prioritizer import prioritize
 from project_risk_agent.providers import ModelProvider
@@ -21,7 +21,7 @@ class AnalysisResult:
         return prioritize(self.findings)
 
     @property
-    def changed_findings(self):
+    def changed_findings(self) -> list[FindingChange]:
         """Return continuing findings whose material attributes changed."""
         return self.delta.changed if self.delta else []
 
