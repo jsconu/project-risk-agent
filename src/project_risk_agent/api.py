@@ -26,10 +26,17 @@ def _changes(result: AnalysisResult) -> list[dict[str, object]]:
 def create_app():
     try:
         from fastapi import FastAPI
+        from fastapi.middleware.cors import CORSMiddleware
     except ImportError as exc:  # pragma: no cover - exercised only without API extra
         raise RuntimeError("Install the 'api' extra to run the HTTP API") from exc
 
     app = FastAPI(title="Project Risk Agent", version="0.1.0")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://127.0.0.1:8001", "http://localhost:8001"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
     service = RiskAnalysisService(DeterministicProvider(RiskAnalyzer()))
 
     @app.get("/health")
