@@ -62,4 +62,5 @@ class Finding(BaseModel):
     owner: str | None = None
     decision_required: bool = False
     decision_owner: str | None = None
+    decision_deadline: str | None = None
     recommended_actions: list[str] = Field(default_factory=list)
