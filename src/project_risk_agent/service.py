@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from project_risk_agent.delta import FindingChange, FindingDelta, compare_findings
+from project_risk_agent.freshness import FindingFreshness, freshness_for_findings
 from project_risk_agent.models import Finding, ProjectSignal
 from project_risk_agent.prioritizer import prioritize
 from project_risk_agent.providers import ModelProvider
@@ -16,6 +17,7 @@ class AnalysisResult:
     signals_analyzed: int
     delta: FindingDelta | None = None
     analyzed_at: datetime | None = None
+    freshness: list[FindingFreshness] | None = None
 
     @property
     def management_attention(self) -> list[Finding]:
@@ -40,6 +42,10 @@ class AnalysisResult:
             return "decreasing"
         return "mixed"
 
+    def freshness_for(self, finding_id: str) -> FindingFreshness | None:
+        """Look up the evidence freshness for a finding."""
+        return next((item for item in self.freshness or [] if item.finding_id == finding_id), None)
+
 
 class RiskAnalysisService:
     def __init__(self, provider: ModelProvider) -> None:
@@ -47,7 +53,12 @@ class RiskAnalysisService:
 
     def analyze(self, signals: list[ProjectSignal]) -> AnalysisResult:
         findings = self.provider.analyze(signals)
-        return AnalysisResult(findings=findings, signals_analyzed=len(signals), analyzed_at=datetime.now(UTC))
+        return AnalysisResult(
+            findings=findings,
+            signals_analyzed=len(signals),
+            analyzed_at=datetime.now(UTC),
+            freshness=freshness_for_findings(findings, signals),
+        )
 
     def analyze_with_state(self, signals: list[ProjectSignal], store: ProjectStateStore) -> AnalysisResult:
         """Analyze current signals, compare with prior intelligence, and persist state."""
