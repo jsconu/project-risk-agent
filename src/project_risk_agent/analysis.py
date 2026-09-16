@@ -146,7 +146,7 @@ class SignalReasoner:
             count = category_counts.get(finding.category, 0)
             if count < 3 or len(finding.evidence) < 2:
                 continue
-            finding.confidence = min(0.95, finding.confidence + 0.05)
+            finding.confidence = min(0.95, finding.confidence + 0.06)
             if finding.likelihood == "medium":
                 finding.likelihood = "high"
             finding.description = f"Recurring across {count} project signals. {finding.description}"
