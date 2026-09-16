@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from project_risk_agent.delta import FindingChange, FindingDelta, compare_findings
 from project_risk_agent.models import Finding, ProjectSignal
@@ -14,6 +15,7 @@ class AnalysisResult:
     findings: list[Finding]
     signals_analyzed: int
     delta: FindingDelta | None = None
+    analyzed_at: datetime | None = None
 
     @property
     def management_attention(self) -> list[Finding]:
@@ -25,6 +27,19 @@ class AnalysisResult:
         """Return continuing findings whose material attributes changed."""
         return self.delta.changed if self.delta else []
 
+    @property
+    def trend(self) -> str:
+        """Summarize whether management attention is increasing, decreasing, or stable."""
+        if not self.delta or not self.delta.changed:
+            return "stable"
+        increased = sum(change.attention_direction == "increased" for change in self.delta.changed)
+        decreased = sum(change.attention_direction == "decreased" for change in self.delta.changed)
+        if increased > decreased:
+            return "increasing"
+        if decreased > increased:
+            return "decreasing"
+        return "mixed"
+
 
 class RiskAnalysisService:
     def __init__(self, provider: ModelProvider) -> None:
@@ -32,17 +47,13 @@ class RiskAnalysisService:
 
     def analyze(self, signals: list[ProjectSignal]) -> AnalysisResult:
         findings = self.provider.analyze(signals)
-        return AnalysisResult(findings=findings, signals_analyzed=len(signals))
+        return AnalysisResult(findings=findings, signals_analyzed=len(signals), analyzed_at=datetime.now(UTC))
 
-    def analyze_with_state(
-        self,
-        signals: list[ProjectSignal],
-        store: ProjectStateStore,
-    ) -> AnalysisResult:
+    def analyze_with_state(self, signals: list[ProjectSignal], store: ProjectStateStore) -> AnalysisResult:
         """Analyze current signals, compare with prior intelligence, and persist state."""
         previous = store.load()
         result = self.analyze(signals)
         prior_findings = previous.findings if previous else []
         result.delta = compare_findings(prior_findings, result.findings)
-        store.save(ProjectSnapshot(signals=signals, findings=result.findings))
+        store.save(ProjectSnapshot(signals=signals, findings=result.findings, analyzed_at=result.analyzed_at))
         return result
