@@ -1,9 +1,10 @@
-from __future__
+from __future__ import annotations
 
 import re
 from collections import defaultdict
 from hashlib import sha256
 
+from project_risk_agent.decisions import extract_decision_requests
 from project_risk_agent.evidence import evidence_for_signals
 from project_risk_agent.models import Evidence, Finding, FindingType, ProjectSignal, RiskCategory
 from project_risk_agent.temporal import has_repeated_change, signal_sequence
@@ -38,6 +39,7 @@ class SignalReasoner:
 
     def analyze(self, signals: list[ProjectSignal]) -> list[Finding]:
         findings: list[Finding] = []
+        decision_requests = {request.signal_id: request for request in extract_decision_requests(signals)}
         for signal in signals:
             text = signal.content.strip()
             if not text:
@@ -47,6 +49,7 @@ class SignalReasoner:
             if not categories and finding_type != FindingType.DECISION:
                 continue
             category = self._category(categories, finding_type)
+            decision = decision_requests.get(signal.id)
             findings.append(
                 Finding(
                     id=_finding_id([signal], finding_type, category),
@@ -59,7 +62,10 @@ class SignalReasoner:
                     urgency=self._urgency(text),
                     confidence=0.68,
                     evidence=[Evidence(signal_id=signal.id, excerpt=text[:500], rationale="Signal contains language associated with a management concern.")],
+                    owner=decision.owner if decision else None,
                     decision_required=finding_type == FindingType.DECISION,
+                    decision_owner=decision.owner if decision and finding_type == FindingType.DECISION else None,
+                    decision_deadline=decision.deadline if decision and finding_type == FindingType.DECISION else None,
                     recommended_actions=self._actions(finding_type, category),
                 )
             )
