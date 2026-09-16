@@ -85,6 +85,8 @@ Trajectory output reports `new`, `persistent`, `improving`, `deteriorating`, and
 
 Explicit decision requests are emitted separately in CLI and API output. Each has a readiness status: `ready`, `missing_owner`, `missing_deadline`, or `missing_owner_and_deadline`. This is an accountability aid for human review; it does not make or execute project decisions.
 
+Dependency findings are also emitted as a separate queue. Their status is `blocked`, `waiting`, or `at_risk`, and each item keeps the IDs of its supporting signals.
+
 For the HTTP API:
 
 ```bash
@@ -165,6 +167,7 @@ The current foundation includes:
 16. a lightweight local demo UI
 17. an optional OpenAI Responses API provider with schema and evidence validation
 18. a decision queue that surfaces missing ownership and deadlines
+19. a dependency queue with evidence-linked delivery status
 
 Planned production connectors include Monday.com, Smartsheet, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
 

@@ -46,7 +46,7 @@ def main() -> None:
     findings = result.findings if args.all else prioritize(result.findings)
 
     if args.brief:
-        print(management_brief(findings, result.decision_requests))
+        print(management_brief(findings, result.decision_requests, result.dependencies))
         print(f"\nTrajectory: {result.trend}")
         for trajectory in result.trajectories:
             print(f"- {trajectory.finding_id}: {trajectory.state} ({trajectory.freshness})")
@@ -88,6 +88,17 @@ def main() -> None:
                 "readiness": item.readiness,
             }
             for item in result.decision_requests or []
+        ],
+        "dependencies": [
+            {
+                "finding_id": item.finding_id,
+                "title": item.title,
+                "status": item.status,
+                "evidence_signal_ids": item.evidence_signal_ids,
+                "owner": item.owner,
+                "required_by": item.required_by,
+            }
+            for item in result.dependencies or []
         ],
         "changed_findings": [
             {

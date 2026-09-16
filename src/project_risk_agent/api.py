@@ -30,6 +30,10 @@ def _decisions(result: AnalysisResult) -> list[dict[str, object]]:
     return [asdict(item) for item in result.decision_requests or []]
 
 
+def _dependencies(result: AnalysisResult) -> list[dict[str, object]]:
+    return [asdict(item) for item in result.dependencies or []]
+
+
 def create_app(provider: ModelProvider | None = None):
     try:
         from fastapi import FastAPI
@@ -60,6 +64,7 @@ def create_app(provider: ModelProvider | None = None):
             "trajectories": _trajectories(result),
             "freshness": _freshness(result),
             "decision_requests": _decisions(result),
+            "dependencies": _dependencies(result),
         }
 
     @app.post("/analyze")
@@ -70,7 +75,9 @@ def create_app(provider: ModelProvider | None = None):
     def brief(request: AnalyzeRequest) -> dict[str, object]:
         result = service.analyze(request.signals)
         return response(result) | {
-            "markdown": management_brief(result.management_attention, result.decision_requests)
+            "markdown": management_brief(
+                result.management_attention, result.decision_requests, result.dependencies
+            )
         }
 
     return app

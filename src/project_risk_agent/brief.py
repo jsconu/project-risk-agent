@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from project_risk_agent.decisions import DecisionRequest
+from project_risk_agent.dependencies import DependencyItem
 from project_risk_agent.models import Finding
 
 
 def management_brief(
-    findings: list[Finding], decision_requests: list[DecisionRequest] | None = None
+    findings: list[Finding],
+    decision_requests: list[DecisionRequest] | None = None,
+    dependencies: list[DependencyItem] | None = None,
 ) -> str:
     """Render findings as a concise, human-reviewable management brief."""
-    if not findings and not decision_requests:
+    if not findings and not decision_requests and not dependencies:
         return "No management-relevant findings detected."
 
     lines = ["# Project Risk Brief", ""]
@@ -39,5 +42,15 @@ def management_brief(
             if request.deadline:
                 details.append(f"**Deadline:** {request.deadline}")
             lines.extend([f"- `{request.signal_id}` — {request.description}", "  " + "  ".join(details)])
+        lines.append("")
+    if dependencies:
+        lines.extend(["## Dependency queue", ""])
+        for dependency in dependencies:
+            details = [f"**Status:** {dependency.status}"]
+            if dependency.owner:
+                details.append(f"**Owner:** {dependency.owner}")
+            if dependency.required_by:
+                details.append(f"**Required by:** {dependency.required_by}")
+            lines.extend([f"- `{dependency.finding_id}` — {dependency.title}", "  " + "  ".join(details)])
         lines.append("")
     return "\n".join(lines)

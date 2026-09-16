@@ -10,6 +10,7 @@ The project is in early development and does not yet guarantee API stability.
 - Resolution guard: a finding absent from a later run is not declared resolved without fresh, linked resolution evidence.
 - Optional OpenAI Responses API provider with strict structured-output, domain-schema, and supplied-evidence validation.
 - Decision queue with explicit ownership/deadline readiness checks in the service, API, CLI, and management brief.
+- Dependency queue with evidence-linked blocked, waiting, and at-risk statuses.
 - Evidence freshness classification based on the timestamps of supporting signals.
 - API and CLI exposure of finding trajectories, freshness, and analysis trend.
 - Persistent local project state with new/continuing/resolved finding deltas.

@@ -1,5 +1,6 @@
 from project_risk_agent.brief import management_brief
 from project_risk_agent.decisions import DecisionRequest
+from project_risk_agent.dependencies import DependencyItem
 from project_risk_agent.models import Evidence, Finding, FindingType, RiskCategory
 
 
@@ -35,3 +36,12 @@ def test_brief_includes_decision_queue_and_readiness():
     assert "# Project Risk Brief" in brief
     assert "Decision queue" in brief
     assert "missing owner and deadline" in brief
+
+
+def test_brief_includes_dependency_queue():
+    brief = management_brief(
+        [], dependencies=[DependencyItem("dep-1", "API delivery", "blocked", ["s1"], None, None)]
+    )
+
+    assert "Dependency queue" in brief
+    assert "blocked" in brief
