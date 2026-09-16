@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__
 
 import re
 from collections import defaultdict
@@ -180,7 +180,7 @@ class SignalReasoner:
             return FindingType.RISK
         if re.search(r"\b(already missed|has failed|failed test|outage|currently blocked|currently unavailable)\b", lowered):
             return FindingType.ISSUE
-        if re.search(r"\b(depends on|dependency|dependencies|waiting for|blocked by)\b", lowered):
+        if re.search(r"\b(depends on|dependency|dependencies|waiting for|blocked by|cannot start|can't start|until .+ is available)\b", lowered):
             return FindingType.DEPENDENCY
         return FindingType.RISK
 
