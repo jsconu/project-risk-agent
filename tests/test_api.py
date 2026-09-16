@@ -29,6 +29,7 @@ def test_api_exposes_health_and_brief():
     assert body["signals_analyzed"] == 1
     assert "# Project Risk Brief" in body["markdown"]
     assert body["findings"][0]["category"] == "schedule"
+    assert body["trajectories"][0]["state"] == "new"
 
 
 def test_api_allows_local_demo_origin():

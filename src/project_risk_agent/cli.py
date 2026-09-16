@@ -8,7 +8,7 @@ from project_risk_agent.analyzer import RiskAnalyzer
 from project_risk_agent.brief import management_brief
 from project_risk_agent.connectors.file import FileConnector
 from project_risk_agent.prioritizer import prioritize
-from project_risk_agent.providers import DeterministicProvider
+from project_risk_agent.providers import DeterministicProvider, openai_provider_from_environment
 from project_risk_agent.service import RiskAnalysisService
 from project_risk_agent.state import JsonProjectStateStore
 
@@ -19,6 +19,16 @@ def main() -> None:
     parser.add_argument("--brief", action="store_true", help="Print a concise management brief")
     parser.add_argument("--all", action="store_true", help="Include all findings instead of prioritized findings")
     parser.add_argument(
+        "--provider",
+        choices=("deterministic", "openai"),
+        default="deterministic",
+        help="Reasoning provider (default: deterministic)",
+    )
+    parser.add_argument(
+        "--model",
+        help="OpenAI model ID; required with --provider openai unless configured in the environment",
+    )
+    parser.add_argument(
         "--state",
         type=Path,
         help="Persist project intelligence at this path and report changes from the prior run",
@@ -26,7 +36,12 @@ def main() -> None:
     args = parser.parse_args()
 
     signals = FileConnector().load(args.path)
-    service = RiskAnalysisService(DeterministicProvider(RiskAnalyzer()))
+    provider = (
+        openai_provider_from_environment(args.model)
+        if args.provider == "openai"
+        else DeterministicProvider(RiskAnalyzer())
+    )
+    service = RiskAnalysisService(provider)
     result = service.analyze_with_state(signals, JsonProjectStateStore(args.state)) if args.state else service.analyze(signals)
     findings = result.findings if args.all else prioritize(result.findings)
 

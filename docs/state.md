@@ -40,6 +40,10 @@ This makes the agent useful for questions such as:
 
 The comparison uses stable finding IDs. Future state backends can add richer history, trend detection, configurable retention, and database-backed concurrency without changing the analysis interface.
 
+## Trajectories and resolution
+
+Each current finding is classified as `new`, `persistent`, `improving`, `deteriorating`, or `stale`. A `resolved` trajectory is emitted only when a current, fresh signal explicitly links to the prior finding (by finding ID or `resolves_finding_ids` metadata) and states that it was resolved, closed, completed, unblocked, or mitigated. A finding merely disappearing from a later analysis remains an unconfirmed delta, not a resolution. This prevents gaps in source coverage from creating false resolution claims.
+
 ## Privacy
 
 State can contain sensitive project information. Keep the state path out of source control and apply the same access, retention, and redaction controls as the underlying project data.

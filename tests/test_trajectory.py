@@ -62,6 +62,17 @@ def test_material_attention_decrease_is_improving():
     assert result[0].attention_direction == "decreased"
 
 
+def test_unchanged_fresh_finding_is_persistent():
+    current = [finding("a")]
+    signal = ProjectSignal(id="s1", source="test", source_type="status", timestamp=NOW, content="schedule")
+    delta = compare_findings(current, current)
+    freshness = freshness_for_findings(current, [signal], now=NOW)
+
+    result = trajectories(current, delta, freshness)
+
+    assert result[0].state == "persistent"
+
+
 def test_old_persistent_finding_is_stale():
     current = [finding("a")]
     signal = ProjectSignal(
@@ -74,3 +85,45 @@ def test_old_persistent_finding_is_stale():
 
     assert result[0].state == "stale"
     assert result[0].freshness == "stale"
+
+
+def test_absent_finding_is_not_resolved_without_explicit_confirmation():
+    previous = [finding("a")]
+    delta = compare_findings(previous, [])
+    signal = ProjectSignal(id="s2", source="test", source_type="status", timestamp=NOW, content="Status update")
+
+    result = trajectories([], delta, [], [signal], now=NOW)
+
+    assert result == []
+
+
+def test_explicit_fresh_resolution_is_reported():
+    previous = [finding("a")]
+    delta = compare_findings(previous, [])
+    signal = ProjectSignal(
+        id="s2",
+        source="test",
+        source_type="status",
+        timestamp=NOW,
+        content="Finding a is resolved and the schedule is unblocked.",
+    )
+
+    result = trajectories([], delta, [], [signal], now=NOW)
+
+    assert [(item.finding_id, item.state, item.freshness) for item in result] == [("a", "resolved", "fresh")]
+
+
+def test_stale_resolution_confirmation_does_not_close_finding():
+    previous = [finding("a")]
+    delta = compare_findings(previous, [])
+    signal = ProjectSignal(
+        id="s2",
+        source="test",
+        source_type="status",
+        timestamp=NOW - timedelta(days=8),
+        content="Finding a is resolved.",
+    )
+
+    result = trajectories([], delta, [], [signal], now=NOW)
+
+    assert result == []

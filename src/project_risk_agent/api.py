@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from project_risk_agent.analyzer import RiskAnalyzer
 from project_risk_agent.brief import management_brief
 from project_risk_agent.models import ProjectSignal
-from project_risk_agent.providers import DeterministicProvider
+from project_risk_agent.providers import DeterministicProvider, ModelProvider
 from project_risk_agent.service import AnalysisResult, RiskAnalysisService
 
 
@@ -26,7 +26,7 @@ def _freshness(result: AnalysisResult) -> list[dict[str, object]]:
     return [asdict(item) for item in result.freshness or []]
 
 
-def create_app():
+def create_app(provider: ModelProvider | None = None):
     try:
         from fastapi import FastAPI
         from fastapi.middleware.cors import CORSMiddleware
@@ -40,7 +40,7 @@ def create_app():
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
-    service = RiskAnalysisService(DeterministicProvider(RiskAnalyzer()))
+    service = RiskAnalysisService(provider or DeterministicProvider(RiskAnalyzer()))
 
     @app.get("/health")
     def health() -> dict[str, str]:

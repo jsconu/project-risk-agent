@@ -61,6 +61,18 @@ project-risk-agent examples/scenarios/hidden_dependency_risk.json
 project-risk-agent examples/scenarios/hidden_dependency_risk.json --brief
 ```
 
+### Optional OpenAI provider
+
+The deterministic provider remains the default. To use OpenAI's model-backed reasoning, install the optional dependency, set an API key outside the repository, and choose a model explicitly:
+
+```bash
+pip install -e ".[openai]"
+export OPENAI_API_KEY="..."
+project-risk-agent examples/scenarios/hidden_dependency_risk.json --provider openai --model YOUR_MODEL_ID
+```
+
+The provider uses the OpenAI Responses API with structured JSON output, validates every response against the existing `Finding` schema, and rejects evidence citations for signals that were not supplied. The API app also accepts any `ModelProvider` through `create_app(provider=...)`, so deployments can opt in without changing the HTTP contract. See the official [Responses API reference](https://developers.openai.com/api/reference/cli/resources/responses/methods/create) for the current API contract.
+
 To enable longitudinal project intelligence locally, provide a state file:
 
 ```bash
@@ -68,6 +80,8 @@ project-risk-agent examples/scenarios/hidden_dependency_risk.json --state .proje
 ```
 
 Run the same command later with updated signals to see material finding changes and whether management attention increased or decreased.
+
+Trajectory output reports `new`, `persistent`, `improving`, `deteriorating`, and `stale` active findings. A finding is `resolved` only with fresh, explicitly linked resolution evidence; simply omitting it in a later run never closes it.
 
 For the HTTP API:
 
@@ -147,6 +161,7 @@ The current foundation includes:
 14. a working Slack read connector
 15. connector templates for additional providers
 16. a lightweight local demo UI
+17. an optional OpenAI Responses API provider with schema and evidence validation
 
 Planned production connectors include Monday.com, Smartsheet, Microsoft Teams, Gmail, Outlook, and meeting-transcript sources.
 

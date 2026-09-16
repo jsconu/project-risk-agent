@@ -16,6 +16,7 @@ from project_risk_agent.trajectory import FindingTrajectory, trajectories
 class AnalysisResult:
     findings: list[Finding]
     signals_analyzed: int
+    signals: list[ProjectSignal] | None = None
     delta: FindingDelta | None = None
     analyzed_at: datetime | None = None
     freshness: list[FindingFreshness] | None = None
@@ -54,7 +55,7 @@ class AnalysisResult:
     @property
     def trajectories(self) -> list[FindingTrajectory]:
         """Classify current findings by longitudinal state and evidence freshness."""
-        return trajectories(self.findings, self.delta, self.freshness)
+        return trajectories(self.findings, self.delta, self.freshness, self.signals, now=self.analyzed_at)
 
 
 class RiskAnalysisService:
@@ -66,6 +67,7 @@ class RiskAnalysisService:
         return AnalysisResult(
             findings=findings,
             signals_analyzed=len(signals),
+            signals=signals,
             analyzed_at=datetime.now(UTC),
             freshness=freshness_for_findings(findings, signals),
         )

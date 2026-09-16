@@ -14,6 +14,7 @@ def make_finding() -> Finding:
         category=RiskCategory.SCHEDULE,
         title="Schedule concern",
         description="A schedule concern",
+        confidence=0.8,
         evidence=[Evidence(signal_id="s1", excerpt="Delayed", rationale="Test")],
     )
 
