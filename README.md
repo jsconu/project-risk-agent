@@ -54,11 +54,23 @@ Email / Chat / Meetings / PM Tools / Documents
 
 Connectors normalize source-specific data into a common `ProjectSignal` model. The risk engine does not need to know whether a signal originated in Jira, Monday, Smartsheet, Slack, Teams, Gmail, Outlook, or a meeting transcript.
 
-## Run it locally
-
-The project has a deterministic, no-API-key baseline so contributors can experiment without a paid model.
+## Install
 
 ```bash
+pip install project-risk-agent
+```
+
+The project has a deterministic, no-API-key baseline, so you can run it against your own signals file without a paid model:
+
+```bash
+project-risk-agent path/to/signals.json --brief
+```
+
+### Try the bundled example (from a clone)
+
+```bash
+git clone https://github.com/jsconu/project-risk-agent.git
+cd project-risk-agent
 pip install -e ".[dev]"
 project-risk-agent examples/scenarios/hidden_dependency_risk.json
 project-risk-agent examples/scenarios/hidden_dependency_risk.json --brief
@@ -69,7 +81,7 @@ project-risk-agent examples/scenarios/hidden_dependency_risk.json --brief
 The deterministic provider remains the default. To use OpenAI's model-backed reasoning, install the optional dependency, set an API key outside the repository, and choose a model explicitly:
 
 ```bash
-pip install -e ".[openai]"
+pip install "project-risk-agent[openai]"
 export OPENAI_API_KEY="..."
 project-risk-agent examples/scenarios/hidden_dependency_risk.json --provider openai --model YOUR_MODEL_ID
 ```
@@ -93,7 +105,7 @@ Dependency findings are also emitted as a separate queue. Their status is `block
 For the HTTP API:
 
 ```bash
-pip install -e ".[api]"
+pip install "project-risk-agent[api]"
 uvicorn project_risk_agent.api:app --reload
 ```
 
