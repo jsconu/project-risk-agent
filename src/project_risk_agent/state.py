@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
@@ -14,6 +15,7 @@ class ProjectSnapshot:
 
     signals: list[ProjectSignal]
     findings: list[Finding]
+    analyzed_at: datetime | None = None
 
 
 class ProjectStateStore(Protocol):
@@ -34,14 +36,17 @@ class JsonProjectStateStore:
         if not self.path.exists():
             return None
         payload = json.loads(self.path.read_text(encoding="utf-8"))
+        analyzed_at = payload.get("analyzed_at")
         return ProjectSnapshot(
             signals=[ProjectSignal.model_validate(item) for item in payload.get("signals", [])],
             findings=[Finding.model_validate(item) for item in payload.get("findings", [])],
+            analyzed_at=datetime.fromisoformat(analyzed_at) if analyzed_at else None,
         )
 
     def save(self, snapshot: ProjectSnapshot) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
+            "analyzed_at": (snapshot.analyzed_at or datetime.now(UTC)).isoformat(),
             "signals": [signal.model_dump(mode="json") for signal in snapshot.signals],
             "findings": [finding.model_dump(mode="json") for finding in snapshot.findings],
         }
