@@ -9,7 +9,6 @@ from project_risk_agent.evidence import evidence_for_signals
 from project_risk_agent.models import Evidence, Finding, FindingType, ProjectSignal, RiskCategory
 from project_risk_agent.temporal import has_repeated_change, signal_sequence
 
-
 PATTERNS: tuple[tuple[str, RiskCategory], ...] = (
     (r"\b(delayed?|slipp(?:ed|ing)|miss(?:ed|ing)|behind|cannot start|can't start)\b", RiskCategory.SCHEDULE),
     (r"\b(moved from .+ to .+|date change|date changed|schedule changed|second date change|another date change)\b", RiskCategory.SCHEDULE),
@@ -39,6 +38,7 @@ class SignalReasoner:
 
     def analyze(self, signals: list[ProjectSignal]) -> list[Finding]:
         findings: list[Finding] = []
+        ordered = signal_sequence(signals)
         decision_requests = {request.signal_id: request for request in extract_decision_requests(signals)}
         for signal in signals:
             text = signal.content.strip()
@@ -69,10 +69,10 @@ class SignalReasoner:
                     recommended_actions=self._actions(finding_type, category),
                 )
             )
-
         findings = self._corroborate(findings)
-        findings = self._infer_contradictions(signals, findings)
-        return self._infer_cross_signal_schedule_risk(signals, findings)
+        findings = self._infer_contradictions(ordered, findings)
+        findings = self._infer_cross_signal_schedule_risk(ordered, findings)
+        return self._infer_recurring_patterns(ordered, findings)
 
     @staticmethod
     def _category(categories: list[RiskCategory], finding_type: FindingType) -> RiskCategory:
@@ -98,18 +98,11 @@ class SignalReasoner:
     @staticmethod
     def _infer_contradictions(signals: list[ProjectSignal], findings: list[Finding]) -> list[Finding]:
         """Surface materially conflicting status language as a human-reviewable risk."""
-        ordered = signal_sequence(signals)
-        positive = re.compile(r"\b(on track|on schedule|on time|still on track|no delay)\b", re.I)
-        negative = re.compile(r"\b(delayed?|slipp(?:ed|ing)|behind schedule|date changed|moved from .+ to .+)\b", re.I)
-        positive_signals = [s for s in ordered if positive.search(s.content)]
-        negative_signals = [s for s in ordered if negative.search(s.content)]
-        if not positive_signals or not negative_signals:
+        positive = re.compile(r"\b(on track|on schedule|on time|still on track|no delay)\b", re.IGNORECASE)
+        negative = re.compile(r"\b(delayed?|slipp(?:ed|ing)|behind schedule|date changed|moved from .+ to .+)\b", re.IGNORECASE)
+        if not any(positive.search(s.content) for s in signals) or not any(negative.search(s.content) for s in signals):
             return findings
-        evidence = evidence_for_signals(
-            ordered,
-            lambda signal: bool(positive.search(signal.content) or negative.search(signal.content)),
-            "Conflicting schedule-status language requires human verification.",
-        )
+        evidence = evidence_for_signals(signals, lambda s: bool(positive.search(s.content) or negative.search(s.content)), "Conflicting schedule-status language requires human verification.")
         existing = next((f for f in findings if f.type == FindingType.RISK and f.category == RiskCategory.SCHEDULE), None)
         if existing:
             existing.evidence = evidence
@@ -117,38 +110,18 @@ class SignalReasoner:
             existing.description = "Project signals contain conflicting schedule-status statements."
             existing.recommended_actions = ["Reconcile the conflicting status updates with the project owner and confirm the current schedule baseline."]
             return findings
-        findings.append(
-            Finding(
-                id=_finding_id(ordered, FindingType.RISK, RiskCategory.SCHEDULE),
-                type=FindingType.RISK,
-                category=RiskCategory.SCHEDULE,
-                title="Conflicting schedule status",
-                description="Project signals contain conflicting schedule-status statements.",
-                likelihood="medium",
-                impact="medium",
-                urgency="medium",
-                confidence=0.84,
-                evidence=evidence,
-                recommended_actions=["Reconcile the conflicting status updates with the project owner and confirm the current schedule baseline."],
-            )
-        )
+        findings.append(Finding(id=_finding_id(signals, FindingType.RISK, RiskCategory.SCHEDULE), type=FindingType.RISK, category=RiskCategory.SCHEDULE, title="Conflicting schedule status", description="Project signals contain conflicting schedule-status statements.", likelihood="medium", impact="medium", urgency="medium", confidence=0.84, evidence=evidence, recommended_actions=["Reconcile the conflicting status updates with the project owner and confirm the current schedule baseline."]))
         return findings
 
     def _infer_cross_signal_schedule_risk(self, signals: list[ProjectSignal], findings: list[Finding]) -> list[Finding]:
-        ordered = signal_sequence(signals)
         movement_pattern = r"\b(moved from .+ to .+|date change|date changed|schedule changed|delayed?|slipp(?:ed|ing)|pushed)\b"
         dependency_pattern = r"\b(depends on|dependency|dependencies|waiting for|blocked by|cannot start|until .+ is available)\b"
-        has_schedule_movement = any(re.search(movement_pattern, s.content.lower()) for s in ordered)
-        has_downstream_dependency = any(re.search(dependency_pattern, s.content.lower()) for s in ordered)
-        repeated_change = has_repeated_change(ordered)
+        has_schedule_movement = any(re.search(movement_pattern, s.content.lower()) for s in signals)
+        has_downstream_dependency = any(re.search(dependency_pattern, s.content.lower()) for s in signals)
+        repeated_change = has_repeated_change(signals)
         if not ((has_schedule_movement and has_downstream_dependency) or repeated_change):
             return findings
-
-        evidence = evidence_for_signals(
-            ordered,
-            lambda signal: bool(re.search(movement_pattern + "|" + dependency_pattern, signal.content.lower())),
-            "Cross-signal evidence for schedule exposure.",
-        )
+        evidence = evidence_for_signals(signals, lambda s: bool(re.search(movement_pattern + "|" + dependency_pattern, s.content.lower())), "Cross-signal evidence for schedule exposure.")
         existing = next((f for f in findings if f.type == FindingType.RISK and f.category == RiskCategory.SCHEDULE), None)
         if existing:
             existing.evidence = evidence or existing.evidence
@@ -159,22 +132,25 @@ class SignalReasoner:
             elif repeated_change:
                 existing.description = "Repeated schedule or status changes indicate increasing schedule exposure."
             return findings
+        findings.append(Finding(id=_finding_id(signals, FindingType.RISK, RiskCategory.SCHEDULE), type=FindingType.RISK, category=RiskCategory.SCHEDULE, title="Potential schedule concern", description="Repeated schedule or status changes are creating schedule exposure." if repeated_change and not has_downstream_dependency else "Schedule movement is coupled to a downstream dependency.", likelihood="high" if has_downstream_dependency else "medium", impact="medium", urgency="medium", confidence=0.82 if has_downstream_dependency else 0.78, evidence=evidence, recommended_actions=["Validate the dependency date and downstream contingency with the owners."]))
+        return findings
 
-        findings.append(
-            Finding(
-                id=_finding_id(ordered, FindingType.RISK, RiskCategory.SCHEDULE),
-                type=FindingType.RISK,
-                category=RiskCategory.SCHEDULE,
-                title="Potential schedule concern",
-                description=("Repeated schedule or status changes are creating schedule exposure." if repeated_change and not has_downstream_dependency else "Schedule movement is coupled to a downstream dependency."),
-                likelihood="high" if has_downstream_dependency else "medium",
-                impact="medium",
-                urgency="medium",
-                confidence=0.82 if has_downstream_dependency else 0.78,
-                evidence=evidence,
-                recommended_actions=["Validate the dependency date and downstream contingency with the owners."],
-            )
-        )
+    @staticmethod
+    def _infer_recurring_patterns(signals: list[ProjectSignal], findings: list[Finding]) -> list[Finding]:
+        """Increase attention when the same concern recurs across distinct project updates."""
+        category_counts: dict[RiskCategory, int] = defaultdict(int)
+        for signal in signals:
+            for category in _matched_categories(signal.content):
+                category_counts[category] += 1
+        for finding in findings:
+            count = category_counts.get(finding.category, 0)
+            if count < 3 or len(finding.evidence) < 2:
+                continue
+            finding.confidence = min(0.95, finding.confidence + 0.05)
+            if finding.likelihood == "medium":
+                finding.likelihood = "high"
+            finding.description = f"Recurring across {count} project signals. {finding.description}"
+            finding.recommended_actions.append("Review the recurring pattern and address the underlying cause rather than the latest symptom.")
         return findings
 
     @staticmethod
