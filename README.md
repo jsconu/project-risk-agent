@@ -61,6 +61,14 @@ project-risk-agent examples/scenarios/hidden_dependency_risk.json
 project-risk-agent examples/scenarios/hidden_dependency_risk.json --brief
 ```
 
+To enable longitudinal project intelligence locally, provide a state file:
+
+```bash
+project-risk-agent examples/scenarios/hidden_dependency_risk.json --state .project-risk/state.json
+```
+
+Run the same command later with updated signals to see material finding changes and whether management attention increased or decreased.
+
 For the HTTP API:
 
 ```bash
@@ -78,7 +86,7 @@ With the API running, serve the static demo from the repository root:
 python -m http.server 8001 --directory demo
 ```
 
-Open `http://127.0.0.1:8001` and click **Analyze**. The page uses only synthetic sample data and calls the local API.
+Open `http://127.0.0.1:8001` and click **Analyze**. The page uses only synthetic sample data and calls the local API. The API explicitly allows requests from the two localhost origins used by this demo.
 
 ## Persistent project intelligence
 
