@@ -6,6 +6,9 @@ The project is in early development and does not yet guarantee API stability.
 
 ## [Unreleased]
 
+- Longitudinal finding trajectories: new, persistent, improving, deteriorating, and stale.
+- Evidence freshness classification based on the timestamps of supporting signals.
+- API and CLI exposure of finding trajectories, freshness, and analysis trend.
 - Persistent local project state with new/continuing/resolved finding deltas.
 - Material-change tracking with management-attention direction across analysis runs.
 - Evidence-backed contradiction detection across project signals.
