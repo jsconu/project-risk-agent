@@ -38,7 +38,8 @@ jobs:
 
       - name: Verify the packaged app starts and analyzes the example (macOS)
         if: runner.os == 'macOS'
-        run: "dist/Project Risk Agent.app/Contents/MacOS/ProjectRiskAgent --self-test"
+        run: |
+          "dist/Project Risk Agent.app/Contents/MacOS/ProjectRiskAgent" --self-test
 
       - name: Name the download (Windows)
         if: runner.os == 'Windows'
