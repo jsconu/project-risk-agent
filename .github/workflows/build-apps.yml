@@ -1,0 +1,62 @@
+name: Build desktop apps
+
+# Builds double-click downloads (no terminal, no Python needed) for non-technical users.
+# On a published release the files are attached to that release. Run it manually
+# (Actions -> Build desktop apps -> Run workflow) to try a build without releasing.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: ProjectRiskAgent-Windows.exe
+          - os: macos-latest
+            asset: ProjectRiskAgent-macOS.zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install ".[chat]" pyinstaller
+      - run: pyinstaller --noconfirm packaging/project-risk-agent.spec
+
+      - name: Verify the packaged app starts and analyzes the example (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: dist/ProjectRiskAgent.exe --self-test
+
+      - name: Verify the packaged app starts and analyzes the example (macOS)
+        if: runner.os == 'macOS'
+        run: "dist/Project Risk Agent.app/Contents/MacOS/ProjectRiskAgent --self-test"
+
+      - name: Name the download (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: cp dist/ProjectRiskAgent.exe "${{ matrix.asset }}"
+
+      - name: Zip the app (macOS)
+        if: runner.os == 'macOS'
+        run: ditto -c -k --keepParent "dist/Project Risk Agent.app" "${{ matrix.asset }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ matrix.asset }}" --clobber

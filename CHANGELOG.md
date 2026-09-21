@@ -6,6 +6,10 @@ The project is in early development and does not yet guarantee API stability.
 
 ## [Unreleased]
 
+- Chat app for non-technical users: a local, guided chat window (`project-risk-agent-chat`, new `chat` extra) where people paste updates or drop `.txt`/`.md`/`.csv`/`.json`/`.eml` files, get plain-language findings with quoted evidence, ask follow-up questions, and download a shareable report. Runs entirely on the user's computer with a localhost-only, token-protected server and a strict CSP.
+- Double-click desktop builds (Windows `.exe`, macOS `.app`) built with PyInstaller and attached to releases by a new workflow, each verified with an in-app self-test.
+- Fix the static demo page, which sent signals without the required `timestamp` and was rejected by the API.
+
 - Apache-2.0 `LICENSE`, Code of Conduct, and GitHub issue/PR templates for open-source release.
 - Packaging metadata (license, classifiers, keywords, project URLs) and a PyPI publish workflow using Trusted Publishing.
 

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Project Risk Agent</title>
+<style nonce="__NONCE__">
+:root {
+  --bg:#f5f6f8; --surface:#ffffff; --text:#1d2330; --muted:#5b6473; --border:#dde1e8;
+  --accent:#2b59c3; --accent-text:#ffffff; --focus:#2b59c3;
+  --high:#b42318; --high-bg:#fef3f2; --med:#93370d; --med-bg:#fffaeb;
+  --low:#475467; --low-bg:#f2f4f7; --ok:#067647; --ok-bg:#ecfdf3; --info:#175cd3; --info-bg:#eff4ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#12151b; --surface:#1b2029; --text:#e6e9ef; --muted:#a3acbb; --border:#2d3543;
+    --accent:#7ea2ff; --accent-text:#0d1220; --focus:#9db8ff;
+    --high:#ff9b90; --high-bg:#3a1a17; --med:#f6c177; --med-bg:#33260f;
+    --low:#b5bdca; --low-bg:#252b36; --ok:#6ce9a6; --ok-bg:#12301f; --info:#84adff; --info-bg:#182544;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  display: flex; flex-direction: column;
+}
+button, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+header.top {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+header.top h1 { font-size: 1.1rem; margin: 0; }
+header.top .privacy { flex: 1 1 260px; margin: 0; color: var(--muted); font-size: .875rem; }
+.linkbtn {
+  background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+  cursor: pointer; min-height: 36px;
+}
+.linkbtn:hover { background: var(--low-bg); }
+#log { flex: 1; overflow-y: auto; padding: 16px; scroll-padding-top: 12px; }
+.wrap { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.msg { display: flex; flex-direction: column; gap: 8px; max-width: 100%; }
+.msg.user { align-items: flex-end; }
+.bubble {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 16px; max-width: 100%;
+}
+.msg.user .bubble { background: var(--accent); color: var(--accent-text); border-color: var(--accent); max-width: 85%; }
+.bubble p { margin: 0 0 8px; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble .note { color: var(--muted); border-left: 3px solid var(--border); padding-left: 10px; font-size: .95rem; }
+.user .meta { font-size: .85rem; opacity: .85; }
+.user .pasted { white-space: pre-wrap; overflow-wrap: anywhere; }
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-left-width: 6px;
+  border-radius: 12px; padding: 14px 16px;
+}
+.card.tone-high { border-left-color: var(--high); }
+.card.tone-medium { border-left-color: var(--med); }
+.card.tone-low { border-left-color: var(--low); }
+.card header { display: flex; gap: 12px; align-items: flex-start; }
+.rank {
+  flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--low-bg);
+  display: grid; place-items: center; font-weight: 700; font-size: .9rem;
+}
+.card h3 { margin: 0; font-size: 1.05rem; }
+.card .sub { margin: 0; color: var(--muted); font-size: .9rem; }
+.priority { margin-left: auto; font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.tone-high .priority { color: var(--high); background: var(--high-bg); }
+.tone-medium .priority { color: var(--med); background: var(--med-bg); }
+.tone-low .priority { color: var(--low); background: var(--low-bg); }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pill { font-size: .8rem; padding: 2px 10px; border-radius: 999px; background: var(--low-bg); color: var(--low); }
+.pill.decision { background: var(--info-bg); color: var(--info); font-weight: 600; }
+.pill.status { background: var(--med-bg); color: var(--med); font-weight: 600; }
+.card h4, .items h4 { margin: 14px 0 6px; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+blockquote { margin: 0 0 8px; padding: 6px 12px; background: var(--low-bg); border-radius: 8px; overflow-wrap: anywhere; }
+blockquote cite { display: block; font-style: normal; font-size: .8rem; color: var(--muted); font-weight: 600; }
+.card ul { margin: 0; padding-left: 20px; }
+.levels { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 12px 0 0; font-size: .9rem; color: var(--muted); }
+.levels b { color: var(--text); font-weight: 600; }
+.fresh { margin: 8px 0 0; font-size: .9rem; color: var(--med); }
+.items { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px 16px 12px; }
+.items ul { list-style: none; margin: 0; padding: 0; }
+.items li { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.items li:first-child { border-top: 0; }
+.tag { flex: none; align-self: flex-start; min-width: 92px; text-align: center; font-size: .8rem; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+.tag.bad { color: var(--high); background: var(--high-bg); }
+.tag.warn { color: var(--med); background: var(--med-bg); }
+.tag.ok { color: var(--ok); background: var(--ok-bg); }
+.tag.info { color: var(--info); background: var(--info-bg); }
+.items li p { margin: 0; overflow-wrap: anywhere; }
+.items li small { color: var(--muted); }
+.doc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; }
+.doc pre {
+  margin: 8px 0; padding: 12px; background: var(--low-bg); border-radius: 8px; max-height: 260px;
+  overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: .85rem/1.5 ui-monospace, Consolas, monospace;
+}
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.primary {
+  background: var(--accent); color: var(--accent-text); border: 0; border-radius: 10px;
+  padding: 8px 16px; font-weight: 600; cursor: pointer; min-height: 40px;
+}
+.primary:disabled { opacity: .5; cursor: not-allowed; }
+.secondary {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 14px; cursor: pointer; min-height: 40px;
+}
+.secondary:hover { background: var(--low-bg); }
+footer.composer { background: var(--surface); border-top: 1px solid var(--border); padding: 10px 16px 14px; }
+#chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 auto 10px; max-width: 820px; }
+.chip {
+  background: var(--info-bg); color: var(--info); border: 1px solid transparent; border-radius: 999px;
+  padding: 6px 14px; cursor: pointer; min-height: 40px;
+}
+.chip:hover { border-color: var(--info); }
+form#form { display: flex; gap: 8px; align-items: flex-end; max-width: 820px; margin: 0 auto; }
+#box {
+  flex: 1; resize: none; background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px 12px; max-height: 200px; min-height: 48px; line-height: 1.4;
+}
+.typing { color: var(--muted); font-style: italic; }
+#drop {
+  position: fixed; inset: 0; background: rgba(43, 89, 195, .88); color: #fff; display: none;
+  place-items: center; font-size: 1.4rem; font-weight: 600; z-index: 10; text-align: center; padding: 24px;
+}
+#drop.on { display: grid; }
+#stopped { position: fixed; inset: 0; background: var(--bg); display: none; place-items: center; text-align: center; padding: 24px; z-index: 20; }
+#stopped.on { display: grid; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (max-width: 700px) {
+  header.top { padding: 8px 12px; gap: 8px; }
+  header.top h1 { flex: 1; }
+  header.top .privacy { order: 3; flex-basis: 100%; font-size: .8rem; }
+  #log { padding: 12px; }
+  footer.composer { padding: 8px 12px 12px; }
+  #chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; margin-bottom: 4px; }
+  .chip { flex: none; white-space: nowrap; }
+  form#form { flex-wrap: wrap; }
+  #box { flex: 1 1 100%; }
+  #attach, #send { flex: 1; }
+  .priority { display: none; }
+  .tag { min-width: 76px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Project Risk Agent</h1>
+  <p class="privacy" id="privacy"></p>
+  <button class="linkbtn" id="reset" type="button">Start over</button>
+  <button class="linkbtn" id="quit" type="button">Quit</button>
+</header>
+
+<main id="log" role="log" aria-live="polite" aria-label="Conversation" tabindex="-1">
+  <div class="wrap" id="wrap"></div>
+  <noscript><p>This app needs JavaScript turned on in your browser.</p></noscript>
+</main>
+
+<footer class="composer">
+  <div id="chips" aria-label="Suggested questions"></div>
+  <form id="form" autocomplete="off">
+    <label class="sr" for="box">Paste project updates or ask a question</label>
+    <textarea id="box" rows="2" placeholder="Paste project updates here, or ask a question. You can also drag a file into this window."></textarea>
+    <input type="file" id="file" accept=".txt,.md,.csv,.json,.eml" multiple hidden>
+    <button type="button" class="secondary" id="attach">Attach file</button>
+    <button type="submit" class="primary" id="send">Send</button>
+  </form>
+</footer>
+
+<div id="drop" aria-hidden="true">Drop a file to have me read it<br>(.txt, .md, .csv, .json or .eml)</div>
+<div id="stopped" role="alert">
+  <div><h2>Project Risk Agent has stopped</h2><p>You can close this tab now.</p></div>
+</div>
+
+<script nonce="__NONCE__">
+(() => {
+  'use strict';
+  const token = new URLSearchParams(location.search).get('t') || '';
+  const $ = (id) => document.getElementById(id);
+  const wrap = $('wrap'), log = $('log'), box = $('box'), chips = $('chips');
+  const sendBtn = $('send'), fileInput = $('file');
+  const PRIORITY = { high: 'Act soon', medium: 'Keep an eye on', low: 'Lower priority' };
+  const ALLOWED = ['.txt', '.md', '.csv', '.json', '.eml'];
+  let maxChars = 1000000;
+  let busy = false;
+
+  function h(tag, props = {}, ...kids) {
+    const el = document.createElement(tag);
+    for (const [key, value] of Object.entries(props)) {
+      if (value == null || value === false) continue;
+      if (key === 'class') el.className = value;
+      else if (key === 'text') el.textContent = value;
+      else if (key.startsWith('on')) el.addEventListener(key.slice(2), value);
+      else el.setAttribute(key, value === true ? '' : value);
+    }
+    for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid);
+    return el;
+  }
+
+  async function api(path, body) {
+    const response = await fetch(path, {
+      method: body === undefined ? 'GET' : 'POST',
+      headers: { 'X-Session-Token': token, 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  }
+
+  const paragraphs = (text, cls) => String(text).split('\n').map((line) => h('p', { class: cls, text: line }));
+
+  function renderFinding(b) {
+    const pills = [h('span', { class: 'pill', text: b.category })];
+    if (b.decision_required) pills.push(h('span', { class: 'pill decision', text: 'Decision needed' }));
+    if (b.status) pills.push(h('span', { class: 'pill status', text: b.status }));
+    const card = h('article', { class: 'card tone-' + b.tone },
+      h('header', {},
+        h('span', { class: 'rank', 'aria-hidden': 'true', text: String(b.rank) }),
+        h('div', {},
+          h('h3', { text: b.title }),
+          h('p', { class: 'sub', text: b.kind + ': ' + b.kind_help.charAt(0).toLowerCase() + b.kind_help.slice(1) }),
+          h('div', { class: 'pills' }, pills)),
+        h('span', { class: 'priority', text: PRIORITY[b.tone] })));
+    if (b.summary) card.append(h('h4', { text: 'Why this matters' }), h('p', { text: b.summary }));
+    if (b.quotes.length) {
+      card.append(h('h4', { text: 'What I read' }));
+      for (const q of b.quotes) card.append(h('blockquote', {}, h('cite', { text: q.source }), q.quote));
+      if (b.more_quotes) card.append(h('p', { class: 'sub', text: '...and ' + b.more_quotes + ' more.' }));
+    }
+    if (b.actions.length) {
+      card.append(h('h4', { text: 'Suggested next steps' }), h('ul', {}, b.actions.map((a) => h('li', { text: a }))));
+    }
+    const levels = h('div', { class: 'levels' });
+    for (const level of b.levels) levels.append(h('span', {}, level.name + ': ', h('b', { text: level.value })));
+    levels.append(h('span', {}, 'How sure I am: ', h('b', { text: b.confidence })));
+    card.append(levels);
+    if (b.freshness_note) card.append(h('p', { class: 'fresh', text: b.freshness_note }));
+    return card;
+  }
+
+  function renderItems(b) {
+    return h('section', { class: 'items' },
+      h('h4', { text: b.title }),
+      h('ul', {}, b.items.map((item) => h('li', {},
+        h('span', { class: 'tag ' + item.tone, text: item.label }),
+        h('div', {}, h('p', { text: item.text }), item.detail ? h('small', { text: item.detail }) : null)))));
+  }
+
+  function copyText(text, button) {
+    const done = () => { const old = button.textContent; button.textContent = 'Copied'; setTimeout(() => { button.textContent = old; }, 1800); };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+    } else fallbackCopy(text, done);
+  }
+  function fallbackCopy(text, done) {
+    const area = h('textarea', { class: 'sr', 'aria-hidden': 'true' });
+    area.value = text; document.body.append(area); area.select();
+    try { document.execCommand('copy'); done(); } catch (e) { /* nothing more to try */ }
+    area.remove();
+  }
+
+  function renderDocument(b) {
+    const copy = h('button', { type: 'button', class: 'secondary', text: 'Copy text' });
+    copy.addEventListener('click', () => copyText(b.text, copy));
+    const download = h('button', { type: 'button', class: 'primary', text: 'Download report' });
+    download.addEventListener('click', () => {
+      const url = URL.createObjectURL(new Blob([b.html], { type: 'text/html' }));
+      const link = h('a', { href: url, download: b.filename });
+      document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+    return h('section', { class: 'doc' }, h('strong', { text: b.title }), h('pre', { text: b.text }), h('div', { class: 'row' }, download, copy));
+  }
+
+  function renderBlock(b) {
+    if (b.type === 'text') return h('div', { class: 'bubble' }, paragraphs(b.text, b.style === 'note' ? 'note' : ''));
+    if (b.type === 'finding') return renderFinding(b);
+    if (b.type === 'items') return renderItems(b);
+    if (b.type === 'document') return renderDocument(b);
+    return null;
+  }
+
+  function renderMessage(m) {
+    if (m.role === 'user') {
+      const meta = m.filename ? 'Attached file: ' + m.filename : (m.chars > m.text.length ? m.chars.toLocaleString() + ' characters pasted' : '');
+      return h('div', { class: 'msg user' }, h('div', { class: 'bubble' },
+        m.text ? h('div', { class: 'pasted', text: m.text + (m.chars > m.text.length ? '...' : '') }) : null,
+        meta ? h('div', { class: 'meta', text: meta }) : null));
+    }
+    return h('div', { class: 'msg assistant' }, m.blocks.map(renderBlock));
+  }
+
+  function setChips(list) {
+    chips.replaceChildren(...list.map((label) => h('button', { type: 'button', class: 'chip', text: label, onclick: () => submit(label) })));
+  }
+
+  function reveal(el, top) {
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (top) el.scrollIntoView({ block: 'start', behavior: calm ? 'auto' : 'smooth' });
+    else log.scrollTo({ top: log.scrollHeight, behavior: calm ? 'auto' : 'smooth' });
+  }
+
+  function addMessage(m, top) {
+    const el = renderMessage(m);
+    wrap.append(el);
+    reveal(el, top);
+    return el;
+  }
+  const localReply = (text) => addMessage({ role: 'assistant', blocks: [{ type: 'text', text, style: 'plain' }] }, true);
+
+  function setBusy(on) {
+    busy = on; sendBtn.disabled = on; box.disabled = on;
+    for (const chip of chips.children) chip.disabled = on;
+  }
+
+  async function submit(text, filename) {
+    if (busy) return;
+    text = (text || '').trim();
+    if (!text && !filename) return;
+    if (text.length > maxChars) { localReply('That is too much text for me to read at once. Please share a smaller part of it.'); return; }
+    addMessage({ role: 'user', text: filename ? '' : text.slice(0, 600), chars: text.length, filename: filename || null }, false);
+    const waiting = h('div', { class: 'msg assistant' }, h('div', { class: 'bubble typing', text: 'Reading...' }));
+    wrap.append(waiting); reveal(waiting, false);
+    setBusy(true);
+    try {
+      const { message } = await api('/api/message', { text, filename: filename || null });
+      waiting.remove();
+      addMessage(message, true);
+      setChips(message.suggestions);
+    } catch (err) {
+      waiting.remove();
+      localReply('I lost contact with the app. If you closed its window, open Project Risk Agent again and start a new conversation.');
+    } finally {
+      setBusy(false);
+      box.focus();
+    }
+  }
+
+  function readFile(file) {
+    const lower = file.name.toLowerCase();
+    if (!ALLOWED.some((ext) => lower.endsWith(ext))) {
+      localReply('I can read .txt, .md, .csv, .json and .eml files. For Word or PDF documents, please copy the text and paste it here.');
+      return Promise.resolve();
+    }
+    if (file.size > 5 * 1024 * 1024) { localReply(file.name + ' is too large for me to read. Try a smaller file.'); return Promise.resolve(); }
+    return file.text().then((text) => submit(text, file.name), () => localReply('I could not open ' + file.name + '.'));
+  }
+  async function readFiles(files) { for (const file of files) await readFile(file); }
+
+  function autoGrow() { box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight, 200) + 'px'; }
+  box.addEventListener('input', autoGrow);
+  box.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); $('form').requestSubmit(); }
+  });
+  $('form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const text = box.value; box.value = ''; autoGrow();
+    submit(text);
+  });
+  $('attach').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => { const files = [...fileInput.files]; fileInput.value = ''; readFiles(files); });
+
+  const drop = $('drop');
+  let depth = 0;
+  window.addEventListener('dragenter', (e) => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { depth++; drop.classList.add('on'); } });
+  window.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (!depth) drop.classList.remove('on'); });
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => { e.preventDefault(); depth = 0; drop.classList.remove('on'); if (e.dataTransfer.files.length) readFiles([...e.dataTransfer.files]); });
+
+  $('reset').addEventListener('click', async () => {
+    if (!confirm('Start over? This clears the updates I have read and the conversation.')) return;
+    try {
+      const state = await api('/api/reset', {});
+      wrap.replaceChildren(...state.transcript.map(renderMessage));
+      setChips(state.suggestions); log.scrollTo({ top: 0 });
+    } catch (err) { localReply('I could not reach the app to start over.'); }
+  });
+  $('quit').addEventListener('click', async () => {
+    if (!confirm('Close Project Risk Agent? The conversation will be cleared.')) return;
+    try { await api('/api/quit', {}); } catch (err) { /* already stopped */ }
+    $('stopped').classList.add('on');
+  });
+
+  (async () => {
+    try {
+      const state = await api('/api/session');
+      maxChars = state.max_chars;
+      $('privacy').textContent = state.privacy;
+      wrap.replaceChildren(...state.transcript.map(renderMessage));
+      setChips(state.suggestions);
+      log.scrollTo({ top: log.scrollHeight });
+      box.focus();
+    } catch (err) {
+      wrap.replaceChildren(h('div', { class: 'bubble', text: 'This page could not connect to Project Risk Agent. Close this tab and open the app again.' }));
+    }
+  })();
+})();
+</script>
+</body>
+</html>

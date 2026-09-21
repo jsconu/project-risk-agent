@@ -34,7 +34,20 @@ background on the pending-publisher flow.
 3. Commit, then tag: `git tag vX.Y.Z && git push origin vX.Y.Z`.
 4. Create a GitHub Release from that tag (Releases → Draft a new release).
    Publishing the release triggers `publish.yml`, which builds and uploads the
-   package to PyPI.
+   package to PyPI, and `build-apps.yml`, which builds the double-click
+   downloads for non-technical users and attaches them to the release.
+
+## Desktop app downloads
+
+`build-apps.yml` produces `ProjectRiskAgent-Windows.exe` and
+`ProjectRiskAgent-macOS.zip` (Apple silicon). Each build must pass the app's
+`--self-test` before it is uploaded. To try the builds without cutting a
+release, run the workflow manually from the Actions tab and download the
+artifacts. The apps are unsigned; see [chat-app.md](chat-app.md) for what
+that means for users and what signing would require.
+
+The README's quick start links to the downloads on the latest release, so
+publish a release (and confirm both files are attached) before promoting it.
 
 [trusted-publishing]: https://docs.pypi.org/trusted-publishers/
 [pypi]: https://pypi.org/

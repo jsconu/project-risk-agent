@@ -25,6 +25,24 @@ The agent should:
 
 > Don't just summarize what happened. Identify what may require management attention, show the evidence, and make the reasoning inspectable.
 
+## Quick start: no terminal needed
+
+Project Risk Agent includes a friendly chat window, so you don't need to write code or use a terminal.
+
+1. **Download the app** for your computer from the [latest release](https://github.com/jsconu/project-risk-agent/releases/latest) (available from version 0.3.0):
+   - Windows: `ProjectRiskAgent-Windows.exe`
+   - Mac (Apple silicon): `ProjectRiskAgent-macOS.zip`
+2. **Open it.** The first time, your computer may warn that the app is from an unrecognized publisher, because it isn't code-signed yet:
+   - Windows: click **More info**, then **Run anyway**.
+   - Mac: unzip it, right-click (or Control-click) the app, choose **Open**, then **Open** again. If macOS still blocks it, go to System Settings, then Privacy & Security, and choose **Open Anyway**.
+3. **A chat opens in your web browser.** Click **Try an example** to see how it works, then paste in your own project updates (status reports, emails, meeting notes) or drag in a file (`.txt`, `.md`, `.csv`, `.json`, `.eml`).
+
+I'll list what may need attention, quote the exact words I based each item on, and answer follow-up questions like "What decisions are needed?" You can download a report to share.
+
+Everything runs on your own computer. Nothing you paste is sent anywhere, and nothing is saved when you close the app. Click **Quit** in the chat (or close the black window on Windows) when you're done. See [docs/chat-app.md](docs/chat-app.md) for details.
+
+If you use Python, you can also run the same chat with `pip install "project-risk-agent[chat]"` and then `project-risk-agent-chat`.
+
 ## Architecture
 
 ```text
